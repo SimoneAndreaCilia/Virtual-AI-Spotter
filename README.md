@@ -1,5 +1,11 @@
 # Virtual AI Spotter
 
+![Status](https://img.shields.io/badge/Status-Work_in_Progress-yellow)
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
+![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)
+
+> 🚧 **Work in Progress**: This project is currently under active development. The repository currently contains the **architectural skeleton** and folder structure. Core implementation of the YOLOv8 logic and AWS integration is being rolled out incrementally.
+
 ## Project Overview
 **Virtual AI Spotter** is a real-time Computer Vision assistant designed to act as an intelligent personal trainer. It utilizes state-of-the-art Deep Learning and geometric analysis to provide automatic repetition counting, exercise suggestions, and instant feedback on execution form.
 
@@ -64,3 +70,24 @@ The system employs a hybrid approach to balance latency and data persistence:
 ### 5. DevOps & Quality Assurance
 *   **CI/CD**: Automated pipelines using **GitHub Actions** for build and deployment checks.
 *   **Testing**: Comprehensive **Unit Testing** suite to validate geometric calculations and state machine logic.
+
+---
+
+## 🗺️ Roadmap
+
+- [x] **Project Initialization**
+    - [x] Define Architecture & Technology Stack
+    - [x] Set up Repository Structure & Security (`.gitignore`)
+- [ ] **Core Engineering**
+    - [ ] Implement `Exercise` Abstract Base Class (OOP)
+    - [ ] Integrate YOLOv8-pose for real-time keypoints
+    - [ ] Develop Geometry Engine for angle calculation
+- [ ] **Exercise Logic (MVP)**
+    - [ ] Squat Analysis (Depth & Form)
+    - [ ] Push-up Analysis (Occlusion handling)
+    - [ ] Bicep Curl (Rep counting logic)
+    - [ ] Plank (Static stability check)
+- [ ] **Cloud & DevOps**
+    - [ ] AWS Lambda & DynamoDB integration
+    - [ ] Unit Testing Suite
+    - [ ] CI/CD Pipeline (GitHub Actions)
