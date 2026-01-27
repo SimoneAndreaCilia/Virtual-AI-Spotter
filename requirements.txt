@@ -1,0 +1,12 @@
+# Computer Vision & AI
+opencv-python>=4.8.0
+ultralytics>=8.0.0      # Questo è YOLOv8
+numpy>=1.24.0
+
+# Cloud & Data
+boto3>=1.28.0           # Per AWS
+python-dotenv>=1.0.0    # Per leggere il file .env
+
+# Dev Tools & Testing
+pytest>=7.4.0
+flake8>=6.1.0

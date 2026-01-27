@@ -56,6 +56,7 @@ Desktop.ini
 # Project Specific - Large Files & Datasets
 assets/videos/
 assets/datasets/
+assets/models/*.pt
 models/*.pt      # Modelli PyTorch pesanti (lasciare se si vuole versionare quelli piccoli)
 models/*.onnx
 *.weights
