@@ -78,14 +78,14 @@ The system employs a hybrid approach to balance latency and data persistence:
 - [x] **Project Initialization**
     - [x] Define Architecture & Technology Stack
     - [x] Set up Repository Structure & Security (`.gitignore`)
-- [ ] **Core Engineering**
-    - [ ] Implement `Exercise` Abstract Base Class (OOP)
-    - [ ] Integrate YOLOv8-pose for real-time keypoints
-    - [ ] Develop Geometry Engine for angle calculation
+- [x] **Core Engineering**
+    - [x] Implement `Exercise` Abstract Base Class (OOP)
+    - [x] Integrate YOLOv8-pose for real-time keypoints
+    - [x] Develop Geometry Engine for angle calculation
 - [ ] **Exercise Logic (MVP)**
     - [ ] Squat Analysis (Depth & Form)
     - [ ] Push-up Analysis (Occlusion handling)
-    - [ ] Bicep Curl (Rep counting logic)
+    - [x] Bicep Curl (Rep counting logic)
     - [ ] Plank (Static stability check)
 - [ ] **Cloud & DevOps**
     - [ ] AWS Lambda & DynamoDB integration
