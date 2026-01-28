@@ -1,14 +1,15 @@
 import numpy as np
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, Tuple
 from src.core.interfaces import Exercise, AnalysisResult
 from src.utils.geometry import calculate_angle
+from config.settings import CURL_THRESHOLDS, CONFIDENCE_THRESHOLD
 
 class BicepCurl(Exercise):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
-        # Soglie angolari (configurabili o di default)
-        self.up_threshold = config.get("up_angle", 45)     # Braccio piegato
-        self.down_threshold = config.get("down_angle", 150) # Braccio disteso
+        # Soglie angolari (configurabili o di default da settings)
+        self.up_threshold = config.get("up_angle", CURL_THRESHOLDS["UP_ANGLE"])
+        self.down_threshold = config.get("down_angle", CURL_THRESHOLDS["DOWN_ANGLE"])
         
         # Lato del corpo da analizzare: 'right' o 'left'
         self.side = config.get("side", "right")
@@ -38,11 +39,11 @@ class BicepCurl(Exercise):
         conf_elbow = landmarks[idx_elbow][2]
         conf_wrist = landmarks[idx_wrist][2]
         
-        if min(conf_shoulder, conf_elbow, conf_wrist) < 0.5:
+        if min(conf_shoulder, conf_elbow, conf_wrist) < CONFIDENCE_THRESHOLD:
              return AnalysisResult(
                 reps=self.reps,
                 stage="unknown",
-                correction="Corpo non visibile",
+                correction="err_body_not_visible",
                 angle=0.0,
                 is_valid=False
             )
@@ -51,7 +52,7 @@ class BicepCurl(Exercise):
         angle = calculate_angle(shoulder, elbow, wrist)
 
         # --- 3. Macchina a Stati (FSM) ---
-        correction_feedback = "Good Form"
+        correction_feedback = "curl_perfect_form"
         is_valid = True
 
         # LOGICA DI CONTEGGIO
@@ -66,7 +67,7 @@ class BicepCurl(Exercise):
         # LOGICA DI CORREZIONE (Esempio semplice)
         # Se nello stato UP l'angolo è ancora troppo aperto (> 90), non sta chiudendo bene
         if self.stage == "up" and angle > 90:
-            correction_feedback = "Chiudi di piu il braccio!"
+            correction_feedback = "curl_err_flexion"
             is_valid = False
 
         return AnalysisResult(
