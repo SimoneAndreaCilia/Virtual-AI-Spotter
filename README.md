@@ -22,6 +22,8 @@
 - **Action Classification**: Distinguishes between different exercises and movement phases.
 - **Automatic Rep Counting**: Precision counting based on biomechanical state transitions.
 - **Form Correction**: Instant feedback on posture (e.g., "Lower your hips", "Straighten back") using geometric rules.
+- **Multi-language Support**: Fully localized interface (Italian/English) with dynamic switching.
+- **Advanced HUD Visualization**: Pro-style transparent overlay with real-time feedback, colored indicators, and smooth skeletal rendering.
 
 ## MVP Scope (Minimum Viable Product)
 The initial release focuses on 4 fundamental exercises that test different aspects of the tracking engine:
@@ -55,7 +57,12 @@ We go beyond basic lists to optimize performance and data integrity:
 *   **Circular Buffer**: Using `collections.deque` to maintain a sliding window of the last 30 frames. This allows for temporal analysis, preventing false positives from single noisy frames.
 *   **Signal Smoothing**: Implementation of algorithms like **One Euro Filter** or **Exponential Moving Average (EMA)** on raw YOLO keypoints to reduce "jittering" and ensure stable angle readings.
 
-### 3. Hybrid Cloud Architecture (Edge + AWS)
+### 3. Clean Architecture & Localization
+*   **Centralized Settings**: All configuration parameters (Thresholds, Colors, Paths) are managed in `config/settings.py` for easy tuning.
+*   **Localization Layer**: A dedicated `LanguageManager` (`config/translation_strings.py`) handles dynamic string translation, separating logic from presentation.
+*   **Visualizer Engine**: A specialized `Visualizer` class handles all rendering duties, using ROI optimization for high-performance transparent overlays.
+
+### 4. Hybrid Cloud Architecture (Edge + AWS)
 The system employs a hybrid approach to balance latency and data persistence:
 *   **Edge (Local PC/GPU)**: The AI inference (YOLOv8) and logic run locally to ensure real-time performance without network lag.
 *   **Cloud (AWS)**: Asynchronous synchronization at the end of each set.
@@ -63,11 +70,11 @@ The system employs a hybrid approach to balance latency and data persistence:
     *   **Amazon DynamoDB (NoSQL)**: A flexible, high-speed database for storing workout analytics.
     *   **Amazon S3**: Object storage for screenshots captured when form errors are detected, allowing users to review their mistakes later.
 
-### 4. Database Strategy
+### 5. Database Strategy
 *   **Local (SQLite)**: Used for storing user preferences and caching workout data if the device is offline.
 *   **Cloud (DynamoDB)**: The central repository for long-term history and analytics.
 
-### 5. DevOps & Quality Assurance
+### 6. DevOps & Quality Assurance
 *   **CI/CD**: Automated pipelines using **GitHub Actions** for build and deployment checks.
 *   **Testing**: Comprehensive **Unit Testing** suite to validate geometric calculations and state machine logic.
 
@@ -82,6 +89,8 @@ The system employs a hybrid approach to balance latency and data persistence:
     - [x] Implement `Exercise` Abstract Base Class (OOP)
     - [x] Integrate YOLOv8-pose for real-time keypoints
     - [x] Develop Geometry Engine for angle calculation
+    - [x] **New**: Implement Visualizer & HUD Engine
+    - [x] **New**: Implement Multi-language Support (IT/EN)
 - [ ] **Exercise Logic (MVP)**
     - [ ] Squat Analysis (Depth & Form)
     - [ ] Push-up Analysis (Occlusion handling)
