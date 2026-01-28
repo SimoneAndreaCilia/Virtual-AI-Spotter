@@ -31,7 +31,6 @@ class Visualizer:
             return
 
         # 1. Disegna i Giunti (Cerchi)
-        # 1. Disegna i Giunti (Cerchi)
         for row in keypoints:
             x, y = row[0], row[1] # Prendi solo x, y (ignorando confidence)
             # Ignora punti a (0,0) o con confidenza bassa (se filtrati prima)
@@ -53,74 +52,177 @@ class Visualizer:
         """
         Disegna il pannello informativo (HUD) con conteggio e stato.
         """
+        # --- 1. Nuova Dashboard "Modern Style" ---
+        
         h, w, _ = frame.shape
         
-        # --- 1. Ottimizzazione Overlay (ROI-based transparency) ---
-        # Invece di copiare tutto il frame (lento), lavoriamo solo sulla ROI
-        dashboard_h, dashboard_w = 180, 250
+        # Configurazione Layout
+        margin = 20
+        box_w = 300  # Aumentato da 260 a 300 per evitare overlap
+        box_h = 160
+        x1, y1 = margin, margin
+        x2, y2 = x1 + box_w, y1 + box_h
         
-        # Safety check: se il frame è più piccolo della dashboard (improbabile ma possibile)
-        if h < dashboard_h or w < dashboard_w:
-             return
+        # Disegna sfondo con angoli arrotondati
+        self._draw_rounded_rect(frame, (x1, y1), (x2, y2), COLORS["OVERLAY_BG"], 
+                                radius=15, alpha=0.7, border_color=COLORS["YELLOW"], border_thickness=1)
 
-        # Estraiamo la Region of Interest (slicing numpy è reference, quindi veloce)
-        # Ma per il blending ci serve modificarla, quindi va bene lavorarci su.
-        roi = frame[0:dashboard_h, 0:dashboard_w]
-        
-        # Creiamo un blocco di colore solido delle stesse dimensioni della ROI
-        # Nota: COLORS["OVERLAY_BG"] è una tupla (B, G, R). np.full vuole shape e fill_value.
-        # fill_value broadcasta correttamente se passiamo la tupla colore.
-        rect = np.full(roi.shape, COLORS["OVERLAY_BG"], dtype=np.uint8)
-        
-        # Applica trasparenza (alpha blending) solo sulla ROI
-        alpha = 0.6
-        # Risultato = (alpha * SRC1) + ((1 - alpha) * SRC2) + gamma
-        # Qui SRC1 è il frame originale (sfondo), SRC2 è il rettangolo colorato (overlay)
-        # Se vogliamo l'effetto scuro trasparente:
-        # frame_pixel * 0.6 + rect_pixel * 0.4
-        cv2.addWeighted(roi, alpha, rect, 1 - alpha, 0, roi)
-        
-        # Essendo 'roi' una vista del frame originale (se fatto via slicing), 
-        # opencv addWeighted con dst=roi modifica in-place il frame originale?
-        # Sì, se passiamo dst=roi.
-        # frame[0:dashboard_h, 0:dashboard_w] = roi # Non strettamente necessario se dst=roi, ma esplicito è meglio.
+        # Separatore orizzontale
+        center_y = y1 + (box_h // 2)
+        cv2.line(frame, (x1 + 10, center_y), (x2 - 10, center_y), COLORS["WHITE"], 1)
 
-        # --- 2. Testi Statici (Labels) ---
-        font = cv2.FONT_HERSHEY_SIMPLEX
+        # Font setup
+        font_label = cv2.FONT_HERSHEY_SIMPLEX
+        font_val = cv2.FONT_HERSHEY_DUPLEX
         
-        # Label REPS
+        # --- SEZIONE ALTA: RIPETIZIONI ---
+        # Icona Dumbbell (semplici cerchi + linea)
+        icon_x = x1 + 30
+        row1_y = y1 + (box_h // 4)
+        self._draw_dumbbell_icon(frame, (icon_x, row1_y), color=COLORS["WHITE"], size=20)
+        
+        # Etichetta "Reps"
         lbl_reps = i18n.get("ui_reps")
-        cv2.putText(frame, f"{lbl_reps}: {reps}", (15, 50), 
-                    font, 1.2, COLORS["WHITE"], 2, cv2.LINE_AA)
-
-        # Label STATE
-        lbl_state = i18n.get("ui_state")
+        cv2.putText(frame, lbl_reps, (x1 + 60, row1_y + 8), font_label, 0.7, COLORS["WHITE"], 1, cv2.LINE_AA)
         
-        # Mappa stati interni -> Chiavi traduzione
-        # Nota: 'up' e 'down' sono specifici del curl qui, in futuro si potrebbe generalizzare
-        state_map = {
-            "up": "curl_state_up",
-            "down": "curl_state_down",
-            "start": "state_start",
-            "unknown": "state_unknown"
+        # Valore Numerico (Allineato a destra)
+        reps_str = str(reps)
+        reps_size = cv2.getTextSize(reps_str, font_val, 1.5, 2)[0]
+        reps_x = x2 - 20 - reps_size[0]
+        
+        # Ombra + Testo
+        cv2.putText(frame, reps_str, (reps_x + 2, row1_y + 12), font_val, 1.5, COLORS["BLACK"], 4, cv2.LINE_AA)
+        cv2.putText(frame, reps_str, (reps_x, row1_y + 10), font_val, 1.5, COLORS["WHITE"], 2, cv2.LINE_AA)
+
+        # --- SEZIONE BASSA: FASE (STATE) ---
+        # Mapping stato -> icona e colore
+        state_key_map = {
+            "up": ("curl_state_up", COLORS["GREEN"], "up"),
+            "down": ("curl_state_down", (0, 165, 255), "down"), # Orange/Reddish
+            "start": ("state_start", COLORS["WHITE"], "neutral"),
+            "unknown": ("state_unknown", COLORS["GRAY"], "neutral")
         }
         
-        key = state_map.get(state, None)
-        if key:
-            translation = i18n.get(key)
-            # Fallback banale se la chiave non esiste (es. "MISSING: ...")
-            if not translation.startswith("MISSING"):
-                display_state = translation
-            else:
-                display_state = state.upper()
-        else:
-            display_state = state.upper()
+        tr_key, state_color, arrow_type = state_key_map.get(state, ("state_unknown", COLORS["GRAY"], "neutral"))
+        state_text = i18n.get(tr_key)
+        if state_text.startswith("MISSING"): state_text = state.upper()
 
-        cv2.putText(frame, f"{lbl_state}: {display_state}", (15, 100), 
-                    font, 0.7, COLORS["YELLOW"], 2, cv2.LINE_AA)
+        row2_y = center_y + (box_h // 4)
         
+        # Icona Freccia
+        self._draw_arrow_icon(frame, (icon_x, row2_y), color=state_color, size=15, direction=arrow_type)
+
+        # Etichetta "Fase"
+        lbl_state = i18n.get("ui_state")
+        cv2.putText(frame, lbl_state, (x1 + 60, row2_y + 8), font_label, 0.7, COLORS["WHITE"], 1, cv2.LINE_AA)
+
+        # Calcolo precisi spazi per evitare overlap
+        label_size = cv2.getTextSize(lbl_state, font_label, 0.7, 1)[0]
+        label_end_x = x1 + 60 + label_size[0]
+        
+        # Spazio disponibile per il valore = (Fine Box - Padding) - (Fine Label + Padding)
+        val_end_x = x2 - 20
+        max_val_width = val_end_x - (label_end_x + 15) # 15px di sicurezza
+        
+        # Valore Stato (Allineato a destra)
+        # Troncare se troppo lungo (hard cap 15 chars)
+        if len(state_text) > 15: state_text = state_text[:15] + "..."
+        
+        font_scale_st = 1.0
+        state_size = cv2.getTextSize(state_text, font_val, font_scale_st, 2)[0]
+        
+        # Riduci finché non entra (minimo 0.4)
+        while state_size[0] > max_val_width and font_scale_st > 0.4:
+            font_scale_st -= 0.1
+            state_size = cv2.getTextSize(state_text, font_val, font_scale_st, 2)[0]
+
+        st_x = val_end_x - state_size[0]
+        
+        # Ombra + Testo
+        cv2.putText(frame, state_text, (st_x + 2, row2_y + 12), font_val, font_scale_st, COLORS["BLACK"], 4, cv2.LINE_AA)
+        cv2.putText(frame, state_text, (st_x, row2_y + 10), font_val, font_scale_st, state_color, 2, cv2.LINE_AA)
+
         # --- 3. Feedback Dinamico (Grande e Centrale) ---
         self._draw_dynamic_feedback(frame, feedback_key, w)
+
+    def _draw_rounded_rect(self, img, pt1, pt2, color, radius=15, alpha=0.5, border_color=None, border_thickness=1):
+        """
+        Disegna un rettangolo arrotondato con riempimento semi-trasparente e bordo opzionale.
+        """
+        x1, y1 = pt1
+        x2, y2 = pt2
+        
+        # Crea overlay per la trasparenza
+        overlay = img.copy()
+        
+        # Disegna i 4 cerchi agli angoli e i rettangoli di connessione (sul layer overlay)
+        # Angoli
+        cv2.circle(overlay, (x1+radius, y1+radius), radius, color, -1)
+        cv2.circle(overlay, (x1+radius, y2-radius), radius, color, -1)
+        cv2.circle(overlay, (x2-radius, y1+radius), radius, color, -1)
+        cv2.circle(overlay, (x2-radius, y2-radius), radius, color, -1)
+        
+        # Corpi centrali
+        cv2.rectangle(overlay, (x1+radius, y1), (x2-radius, y2), color, -1)
+        cv2.rectangle(overlay, (x1, y1+radius), (x2, y2-radius), color, -1)
+        
+        # Applica alpha blending
+        cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
+        
+        # Disegna il bordo (se richiesto) direttamente sull'immagine finale (non trasparente)
+        if border_color and border_thickness > 0:
+            # Linee rette
+            cv2.line(img, (x1+radius, y1), (x2-radius, y1), border_color, border_thickness)
+            cv2.line(img, (x1+radius, y2), (x2-radius, y2), border_color, border_thickness)
+            cv2.line(img, (x1, y1+radius), (x1, y2-radius), border_color, border_thickness)
+            cv2.line(img, (x2, y1+radius), (x2, y2-radius), border_color, border_thickness)
+            
+            # Archi per gli angoli
+            cv2.ellipse(img, (x1+radius, y1+radius), (radius, radius), 180, 0, 90, border_color, border_thickness)
+            cv2.ellipse(img, (x1+radius, y2-radius), (radius, radius), 90, 0, 90, border_color, border_thickness)
+            cv2.ellipse(img, (x2-radius, y1+radius), (radius, radius), 270, 0, 90, border_color, border_thickness)
+            cv2.ellipse(img, (x2-radius, y2-radius), (radius, radius), 0, 0, 90, border_color, border_thickness)
+
+    def _draw_dumbbell_icon(self, img, center, color, size=20):
+        """Disegna un'icona stilizzata di un manubrio."""
+        cx, cy = center
+        half = size // 2
+        # Asta
+        cv2.line(img, (cx - half, cy), (cx + half, cy), color, 2)
+        # Pesi (rettangoli arrotondati o linee spesse)
+        cv2.rectangle(img, (cx - half - 4, cy - half + 2), (cx - half, cy + half - 2), color, -1)
+        cv2.rectangle(img, (cx + half, cy - half + 2), (cx + half + 4, cy + half - 2), color, -1)
+
+    def _draw_arrow_icon(self, img, center, color, size=15, direction="neutral"):
+        """Disegna un'icona freccia SU o GIU."""
+        cx, cy = center
+        half = size // 2
+        
+        if direction == "up":
+            # Freccia SU
+            pts = np.array([
+                [cx, cy - half - 2],        # Punta
+                [cx - half, cy + 2],   # Sinistra
+                [cx + half, cy + 2]    # Destra
+            ])
+            cv2.fillPoly(img, [pts], color)
+            # Corpo rettangolare sotto
+            cv2.rectangle(img, (cx - 2, cy + 2), (cx + 2, cy + half + 4), color, -1)
+            
+        elif direction == "down":
+            # Freccia GIU
+            pts = np.array([
+                [cx, cy + half + 2],        # Punta
+                [cx - half, cy - 2],   # Sinistra
+                [cx + half, cy - 2]    # Destra
+            ])
+            cv2.fillPoly(img, [pts], color)
+            # Corpo rettangolare sopra
+            cv2.rectangle(img, (cx - 2, cy - half - 4), (cx + 2, cy - 2), color, -1)
+            
+        else:
+            # Cerchio o quadrato per neutral
+            cv2.circle(img, (cx, cy), half // 2, color, -1)
 
     def _draw_dynamic_feedback(self, frame, feedback_key, width):
         """

@@ -51,6 +51,7 @@ COLORS = {
     "RED": (0, 0, 255),        # Errore / Form Errata
     "YELLOW": (0, 255, 255),   # Warning / Info / Giunti
     "BLUE": (255, 0, 0),       # Scheletro
+    "GRAY": (128, 128, 128),   # Grigio standard
     "OVERLAY_BG": (40, 40, 40) # Sfondo scuro semitrasparente
 }
 
