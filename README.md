@@ -4,7 +4,7 @@
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)
 
-> 🚧 **Work in Progress**: This project is currently under active development. The repository currently contains the **architectural skeleton** and folder structure. Core implementation of the YOLOv8 logic and AWS integration is being rolled out incrementally.
+> 🚧 **Work in Progress**: This project is currently under active development. Core features like **YOLOv8** integration, **Bicep Curl** analysis, and the **visual HUD** are fully functional. AWS cloud synchronization and additional exercises are being implemented incrementally.
 
 ## Project Overview
 **Virtual AI Spotter** is a real-time Computer Vision assistant designed to act as an intelligent personal trainer. It utilizes state-of-the-art Deep Learning and geometric analysis to provide automatic repetition counting, exercise suggestions, and instant feedback on execution form.
