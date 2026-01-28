@@ -1,10 +1,11 @@
 import cv2
 import numpy as np
-from typing import Tuple, Optional
+from typing import Tuple
 from src.core.interfaces import VideoSource
+from config.settings import CAMERA_ID, FRAME_WIDTH, FRAME_HEIGHT
 
 class WebcamSource(VideoSource):
-    def __init__(self, source_index: int = 0, width: int = 1280, height: int = 720):
+    def __init__(self, source_index: int = CAMERA_ID, width: int = FRAME_WIDTH, height: int = FRAME_HEIGHT):
         self.source_index = source_index
         # Inizializza la cattura video
         self.cap = cv2.VideoCapture(self.source_index)
