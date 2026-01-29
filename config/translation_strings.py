@@ -26,7 +26,33 @@ TRANSLATIONS = {
         "curl_perfect_form": "Forma perfetta!",
         "err_body_not_visible": "Corpo non visibile",
         "state_unknown": "SCONOSCIUTO",
-        "state_start": "PRONTO"
+        "state_start": "PRONTO",
+        
+        # --- SQUAT (Feedback) ---
+        "squat_name": "Squat",
+        "squat_state_up": "SU (In Piedi)",
+        "squat_state_down": "GIU (Accosciata)",
+        "squat_perfect_form": "Ottimo Squat!",
+        "squat_err_depth": "Scendi di più! (Sotto 90°)",
+        
+        # --- NEW CLI & OVERLAY STRINGS ---
+        "ui_workout_setup": "IMPOSTAZIONE WORKOUT",
+        "ui_select_ex": "Seleziona Esercizio (1-2)",
+        "ui_selected": "Selezionato",
+        "ui_side_choice": "Lato (Sinistro 'L' / Destro 'R' / Entrambi 'B') [Default R]",
+        "ui_side_val": "LATO",
+        "side_left": "SINISTRO",
+        "side_right": "DESTRO",
+        "side_both": "ENTRAMBI",
+        "ui_settings": "Impostazioni",
+        "ui_target_sets": "Quante Serie? [Default 3]",
+        "ui_target_reps": "Quante Ripetizioni per Serie? [Default 8]",
+        "ui_goal": "Obiettivo",
+        "ui_start_prompt": "Premi INVIO per iniziare...",
+        "ui_rest_title": "TEMPO DI RECUPERO",
+        "ui_rest_subtitle": "Premi 'C' per la prossima serie",
+        "ui_finish_title": "ALLENAMENTO COMPLETATO!",
+        "ui_finish_subtitle": "Premi 'Q' per uscire"
     },
     
     "EN": {
@@ -54,7 +80,33 @@ TRANSLATIONS = {
         "curl_perfect_form": "Perfect form!",
         "err_body_not_visible": "Body not visible",
         "state_unknown": "UNKNOWN",
-        "state_start": "READY"
+        "state_start": "READY",
+        
+        # --- SQUAT (Feedback) ---
+        "squat_name": "Squat",
+        "squat_state_up": "UP (Standing)",
+        "squat_state_down": "DOWN (Squat)",
+        "squat_perfect_form": "Great Squat!",
+        "squat_err_depth": "Go lower! (Below 90°)",
+        
+        # --- NEW CLI & OVERLAY STRINGS ---
+        "ui_workout_setup": "WORKOUT SETUP",
+        "ui_select_ex": "Select Exercise (1-2)",
+        "ui_selected": "Selected",
+        "ui_side_choice": "Side (Left 'L' / Right 'R' / Both 'B') [Default R]",
+        "ui_side_val": "SIDE",
+        "side_left": "LEFT",
+        "side_right": "RIGHT",
+        "side_both": "BOTH",
+        "ui_settings": "Settings",
+        "ui_target_sets": "Target Sets [Default 3]",
+        "ui_target_reps": "Target Reps per Set [Default 8]",
+        "ui_goal": "Goal",
+        "ui_start_prompt": "Press ENTER to start workout...",
+        "ui_rest_title": "REST TIME",
+        "ui_rest_subtitle": "Press 'C' to start next set",
+        "ui_finish_title": "WORKOUT COMPLETE!",
+        "ui_finish_subtitle": "Press 'Q' to exit"
     }
 }
 

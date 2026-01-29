@@ -28,7 +28,7 @@ def calculate_angle(a: Tuple[float, float],
     
     # Calcoliamo il coseno dell'angolo usando il prodotto scalare (dot product)
     # Formula: cos(theta) = (u . v) / (|u| * |v|)
-    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-6)
     
     # Gestione errori numerici: clippiamo il valore tra -1.0 e 1.0
     cosine_angle = np.clip(cosine_angle, -1.0, 1.0)

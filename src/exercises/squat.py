@@ -1,17 +1,17 @@
 import numpy as np
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
 from src.core.interfaces import Exercise, AnalysisResult
 from src.utils.geometry import calculate_angle
-from config.settings import CURL_THRESHOLDS, CONFIDENCE_THRESHOLD
+from config.settings import SQUAT_THRESHOLDS, CONFIDENCE_THRESHOLD
 
-class BicepCurl(Exercise):
+class Squat(Exercise):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
-        # Soglie angolari (configurabili o di default da settings)
-        self.up_threshold = config.get("up_angle", CURL_THRESHOLDS["UP_ANGLE"])
-        self.down_threshold = config.get("down_angle", CURL_THRESHOLDS["DOWN_ANGLE"])
+        self.up_threshold = config.get("up_angle", SQUAT_THRESHOLDS["UP_ANGLE"])
+        self.down_threshold = config.get("down_angle", SQUAT_THRESHOLDS["DOWN_ANGLE"])
         
-        # Lato del corpo da analizzare: 'right' o 'left'
+        # Lato del corpo da analizzare: 'right' (default) o 'left'
+        # Per lo squat spesso si guarda di lato, quindi ha senso scegliere un lato.
         self.side = config.get("side", "right")
 
     def process_frame(self, landmarks: np.ndarray) -> AnalysisResult:
@@ -21,8 +21,9 @@ class BicepCurl(Exercise):
         """
         
         # --- 1. Selezione Keypoint ---
-        idx_shoulder_l, idx_elbow_l, idx_wrist_l = 5, 7, 9
-        idx_shoulder_r, idx_elbow_r, idx_wrist_r = 6, 8, 10
+        # Mappa keypoint YOLOv8 (COCO format)
+        idx_hip_l, idx_knee_l, idx_ankle_l = 11, 13, 15
+        idx_hip_r, idx_knee_r, idx_ankle_r = 12, 14, 16
         
         # Determine target sides
         sides_to_process = []
@@ -30,22 +31,22 @@ class BicepCurl(Exercise):
             sides_to_process.append("left")
         if self.side == "right" or self.side == "both":
             sides_to_process.append("right")
-
+            
         valid_angles = []
-
+        
         # --- Process Left ---
         if "left" in sides_to_process:
-             if min(landmarks[idx_shoulder_l][2], landmarks[idx_elbow_l][2], landmarks[idx_wrist_l][2]) >= CONFIDENCE_THRESHOLD:
-                angle_l = calculate_angle(landmarks[idx_shoulder_l][:2], landmarks[idx_elbow_l][:2], landmarks[idx_wrist_l][:2])
+             if min(landmarks[idx_hip_l][2], landmarks[idx_knee_l][2], landmarks[idx_ankle_l][2]) >= CONFIDENCE_THRESHOLD:
+                angle_l = calculate_angle(landmarks[idx_hip_l][:2], landmarks[idx_knee_l][:2], landmarks[idx_ankle_l][:2])
                 valid_angles.append(angle_l)
 
         # --- Process Right ---
         if "right" in sides_to_process:
-             if min(landmarks[idx_shoulder_r][2], landmarks[idx_elbow_r][2], landmarks[idx_wrist_r][2]) >= CONFIDENCE_THRESHOLD:
-                angle_r = calculate_angle(landmarks[idx_shoulder_r][:2], landmarks[idx_elbow_r][:2], landmarks[idx_wrist_r][:2])
+             if min(landmarks[idx_hip_r][2], landmarks[idx_knee_r][2], landmarks[idx_ankle_r][2]) >= CONFIDENCE_THRESHOLD:
+                angle_r = calculate_angle(landmarks[idx_hip_r][:2], landmarks[idx_knee_r][:2], landmarks[idx_ankle_r][:2])
                 valid_angles.append(angle_r)
 
-        # Se non abbiamo angoli validi
+        # Se non abbiamo angoli validi (per i lati richiesti)
         if len(valid_angles) < len(sides_to_process):
              return AnalysisResult(
                 reps=self.reps,
@@ -59,24 +60,22 @@ class BicepCurl(Exercise):
         angle = np.mean(valid_angles)
 
         # --- 3. Macchina a Stati (FSM) ---
-        correction_feedback = "curl_perfect_form"
+        correction_feedback = "squat_perfect_form"
         is_valid = True
 
-        # LOGICA DI CONTEGGIO
-        if angle > self.down_threshold:
-            self.stage = "down"
+        # LOGICA DI CONTEGGIO SQUAT
+        # DOWN: Angolo diminuisce (si scende) -> verso 90 gradi
+        # UP: Angolo aumenta (si sale) -> verso 160+ gradi
+        
+        if angle < self.down_threshold: # Sei sceso sotto i 90 (o soglia)
+            self.stage = "squat_down"
             
-        if angle < self.up_threshold and self.stage == "down":
-            self.stage = "up"
+        if angle > self.up_threshold and self.stage == "squat_down":
+            self.stage = "squat_up"
             self.reps += 1
-            # Qui potremmo aggiungere logica per resettare errori se necessario
-
-        # LOGICA DI CORREZIONE (Esempio semplice)
-        # Se nello stato UP l'angolo è ancora troppo aperto (> 90), non sta chiudendo bene
-        if self.stage == "up" and angle > 90:
-            correction_feedback = "curl_err_flexion"
-            is_valid = False
-
+            
+        # LOGICA DI CORREZIONE
+        
         return AnalysisResult(
             reps=self.reps,
             stage=self.stage,
