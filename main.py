@@ -7,6 +7,11 @@ from ultralytics import YOLO
 from src.infrastructure.webcam import WebcamSource
 from src.exercises.curl import BicepCurl
 from src.ui.visualizer import Visualizer
+# [NEW] Imports per Persistenza
+from src.data.db_manager import DatabaseManager
+from src.core.entities.user import User
+from src.core.entities.session import Session
+
 from config.settings import (
     MODEL_PATH, DEVICE, CAMERA_ID, 
     CURL_THRESHOLDS, LOGS_DIR
@@ -50,6 +55,28 @@ def main():
     select_language()
 
     logging.info("--- Avvio Virtual AI Spotter ---")
+    
+    # [NEW] Inizializzazione Database
+    try:
+        logging.info("Inizializzazione Database...")
+        db_manager = DatabaseManager()
+        
+        # Carica Utente (o crea Default)
+        current_user = db_manager.get_user()
+        if not current_user:
+            logging.info("Nessun utente trovato. Creazione utente Default.")
+            current_user = User(username="Athlete", height=175.0, weight=70.0)
+            db_manager.save_user(current_user)
+        else:
+            logging.info(f"Bentornato, {current_user.username}!")
+            
+        # Crea Nuova Sessione
+        current_session = Session(user_id=current_user.id)
+        logging.info(f"Nuova sessione avviata: {current_session.id}")
+        
+    except Exception as e:
+        logging.critical(f"Errore inizializzazione DB: {e}", exc_info=True)
+        return
 
     # 1. Caricamento del Modello AI (YOLOv8 Pose)
     try:
@@ -82,6 +109,9 @@ def main():
         "down_angle": CURL_THRESHOLDS["DOWN_ANGLE"]
     })
     logging.info("Esercizio Bicep Curl configurato.")
+    
+    # Variabile per tracciare le rep salvate ed evitare duplicati
+    last_reps_count = 0
 
     # --- MAIN LOOP (Il cuore dell'app) ---
     print(f"\n{i18n.get('ui_quit')}\n")
@@ -118,6 +148,17 @@ def main():
                 # 2. Analisi Esercizio
                 analysis = curl_exercise.process_frame(keypoints)
 
+                # [NEW] Logica di Salvataggio Esercizio
+                # Se le ripetizioni sono aumentate, salviamo il progresso
+                if analysis.reps > last_reps_count:
+                    # Aggiungiamo l'esercizio alla sessione (semplificato: ogni rep è un aggiornamento)
+                    # In realtà vorremmo salvare i SET, ma per ora salviamo l'aggiornamento
+                    # Rimuoviamo l'ultimo inserimento se esiste per aggiornare il conteggio
+                    # O meglio: aggiungiamo UN solo record "Bicep Curl" alla fine
+                    pass 
+                    last_reps_count = analysis.reps
+                    logging.info(f"Reps: {last_reps_count}")
+
                 # 3. UI Overlay (Dashboard & Feedback)
                 # Nota: 'analysis' contiene i dati grezzi, Visualizer sa come mostrarli
                 # analysis.correction ora dovrebbe essere una CHIAVE di traduzione o testo
@@ -150,6 +191,25 @@ def main():
         # G. Cleanup (Rilascio risorse)
         cam.release()
         cv2.destroyAllWindows()
+        
+        # [NEW] Salvataggio Sessione
+        try:
+            if 'current_session' in locals():
+                # Aggiorniamo i dati della sessione con l'esercizio fatto
+                if last_reps_count > 0:
+                    current_session.add_exercise({
+                        "name": "Bicep Curl",
+                        "reps": last_reps_count,
+                        "valid": True, # Semplificazione
+                        "side": curl_exercise.side
+                    })
+                
+                current_session.end_session()
+                db_manager.save_session(current_session)
+                logging.info(f"Sessione {current_session.id} salvata nel DB.")
+        except Exception as e:
+            logging.error(f"Errore salvataggio sessione: {e}")
+
         logging.info("Applicazione chiusa correttamente.")
 
 if __name__ == "__main__":
