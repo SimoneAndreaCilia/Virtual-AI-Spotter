@@ -1,20 +1,20 @@
 import cv2
 import sys
 import logging
+import time
 from ultralytics import YOLO
 
 # Imports dai tuoi moduli (Architecture)
 from src.infrastructure.webcam import WebcamSource
-from src.exercises.curl import BicepCurl
+from src.core.factory import ExerciseFactory
 from src.ui.visualizer import Visualizer
-# [NEW] Imports per Persistenza
 from src.data.db_manager import DatabaseManager
 from src.core.entities.user import User
 from src.core.entities.session import Session
 
 from config.settings import (
     MODEL_PATH, DEVICE, CAMERA_ID, 
-    CURL_THRESHOLDS, LOGS_DIR
+    CURL_THRESHOLDS, SQUAT_THRESHOLDS, LOGS_DIR
 )
 from config.translation_strings import i18n
 
@@ -50,13 +50,83 @@ def select_language():
         else:
             print("Invalid choice. Please press 'I' or 'E'.")
 
+def select_exercise_settings():
+    """
+    Chiede all'utente quale esercizio svolgere e le impostazioni (Serie/Reps).
+    Restituisce: (exercise_name, config_dict, target_sets, target_reps)
+    """
+    print("\n" + "="*40)
+    print(f" {i18n.get('ui_title').upper()} - {i18n.get('ui_workout_setup')}")
+    print("="*40)
+    
+    # 1. Scelta Esercizio
+    print(" 1. Bicep Curl")
+    print(" 2. Squat")
+    
+    ex_choice = input(f"\n{i18n.get('ui_quit')} ({i18n.get('ui_select_ex')}): ").strip()
+    
+    exercise_name = "Bicep Curl"
+    config = {}
+    
+    if ex_choice == '2':
+        exercise_name = "Squat"
+        config = {
+            "up_angle": SQUAT_THRESHOLDS["UP_ANGLE"],
+            "down_angle": SQUAT_THRESHOLDS["DOWN_ANGLE"]
+        }
+    else:
+        # Default o Scelta 1
+        exercise_name = "Bicep Curl"
+        config = {
+            "up_angle": CURL_THRESHOLDS["UP_ANGLE"],
+            "down_angle": CURL_THRESHOLDS["DOWN_ANGLE"]
+        }
+        
+    print(f" -> {i18n.get('ui_selected')}: {exercise_name}")
+
+    # 2. Scelta Lato (Solo per Curl o Squat asimmetrici, ma lo teniamo generico)
+    # Per semplicità lo chiediamo sempre, default Right
+    side_choice = input(f" {i18n.get('ui_side_choice')}: ").strip().upper()
+    if side_choice == 'L':
+        config["side"] = "left"
+    elif side_choice == 'B':
+        config["side"] = "both"
+    else:
+        config["side"] = "right"
+        
+    # Visualizza la scelta localizzata (es. side_left -> SINISTRO, side_both -> ENTRAMBI)
+    side_key = f"side_{config['side']}"
+    print(f" -> {i18n.get('ui_side_val')}: {i18n.get(side_key)}")
+
+    # 3. Scelta Serie e Ripetizioni
+    print(f"\n [{i18n.get('ui_settings')}]")
+    try:
+        sets_input = input(f" {i18n.get('ui_target_sets')}: ").strip()
+        target_sets = int(sets_input) if sets_input else 3
+        
+        reps_input = input(f" {i18n.get('ui_target_reps')}: ").strip()
+        target_reps = int(reps_input) if reps_input else 8
+    except ValueError:
+        print(" ! Invalid input. Using defaults (3x8).")
+        target_sets = 3
+        target_reps = 8
+        
+    print(f" -> {i18n.get('ui_goal')}: {target_sets} Sets x {target_reps} Reps")
+    print("="*40)
+    input(f"\n{i18n.get('ui_start_prompt')}")
+    
+    return exercise_name, config, target_sets, target_reps
+
 def main():
-    # 0. Selezione Lingua
+    # 0. UI Iniziale (Console)
     select_language()
+    
+    # [NEW] Selezione Esercizio e Target
+    ex_name, ex_config, target_sets, target_reps = select_exercise_settings()
 
     logging.info("--- Avvio Virtual AI Spotter ---")
     
-    # [NEW] Inizializzazione Database
+    # Inizializzazione Database
     try:
         logging.info("Inizializzazione Database...")
         db_manager = DatabaseManager()
@@ -70,8 +140,12 @@ def main():
         else:
             logging.info(f"Bentornato, {current_user.username}!")
             
-        # Crea Nuova Sessione
-        current_session = Session(user_id=current_user.id)
+        # Crea Nuova Sessione con Targets
+        current_session = Session(
+            user_id=current_user.id,
+            target_sets=target_sets,
+            target_reps=target_reps
+        )
         logging.info(f"Nuova sessione avviata: {current_session.id}")
         
     except Exception as e:
@@ -82,7 +156,6 @@ def main():
     try:
         logging.info(f"Caricamento modello YOLOv8 da {MODEL_PATH}...")
         model = YOLO(MODEL_PATH) 
-        # Forziamo l'uso della GPU (CUDA) se disponibile
         model.to(DEVICE) 
         logging.info(f"Modello caricato su: {model.device}")
     except Exception as e:
@@ -98,22 +171,19 @@ def main():
         return
 
     # 3. Inizializzazione Componenti (Exercise & UI)
-    
-    # Visualizer: gestisce tutta la grafica
     visualizer = Visualizer()
     
-    # Configuriamo un Curl col braccio DESTRO usando i parametri da settings
-    curl_exercise = BicepCurl(config={
-        "side": "right", 
-        "up_angle": CURL_THRESHOLDS["UP_ANGLE"],
-        "down_angle": CURL_THRESHOLDS["DOWN_ANGLE"]
-    })
-    logging.info("Esercizio Bicep Curl configurato.")
+    # [NEW] Creazione Esercizio tramite Factory
+    current_exercise = ExerciseFactory.create_exercise(ex_name, ex_config)
+    logging.info(f"Esercizio {ex_name} configurato.")
     
-    # Variabile per tracciare le rep salvate ed evitare duplicati
-    last_reps_count = 0
-
-    # --- MAIN LOOP (Il cuore dell'app) ---
+    # --- LOGICA DI STATO DEL WORKOUT ---
+    current_set = 1
+    workout_state = "EXERCISE" # EXERCISE | REST | FINISHED
+    
+    # Messaggio overlay per il REST/FINISHED
+    overlay_message = ""
+    
     print(f"\n{i18n.get('ui_quit')}\n")
     
     try:
@@ -124,93 +194,139 @@ def main():
                 logging.warning("Frame non ricevuto.")
                 break
 
-            # B. Inference (AI)
-            # verbose=False riduce lo spam nel terminale
+            # B. Check completamento sessione
+            if workflow_completed(current_set, target_sets):
+                workout_state = "FINISHED"
+
+            # C. Inference (AI) - Solo se non siamo FINISHED (o facciamo comunque tracking?)
+            # Facciamo tracking sempre per vedere se l'utente si muove anche in pausa
             results = model(frame, verbose=False) 
-            
-            # C. Elaborazione Logica
-            # Prendiamo il primo risultato (c'è solo una persona?)
-            # Non usiamo più results[0].plot() per avere il controllo totale sulla grafica
-            # annotatated_frame = results[0].plot() # RIMOSSO per usare Visualizer
-            
-            # Usiamo una copia del frame originale per disegnare
             display_frame = frame.copy()
 
-            # Verifichiamo se YOLO ha trovato keypoints
+            dashboard_reps = 0
+            dashboard_state = "start"
+            dashboard_feedback = ""
+
+            # Check se abbiamo persone
             if results[0].keypoints is not None and results[0].keypoints.data.shape[0] > 0:
-                
-                # ORA è sicuro chiamare l'indice [0] perché sappiamo che c'è qualcuno
                 keypoints = results[0].keypoints.data[0].cpu().numpy()
-                
-                # 1. Disegna Scheletro Custom
                 visualizer.draw_skeleton(display_frame, keypoints)
 
-                # 2. Analisi Esercizio
-                analysis = curl_exercise.process_frame(keypoints)
+                if workout_state == "EXERCISE":
+                    # --- 2. Analisi Esercizio ---
+                    analysis = current_exercise.process_frame(keypoints)
+                    
+                    dashboard_reps = analysis.reps
+                    dashboard_state = analysis.stage
+                    dashboard_feedback = analysis.correction
+                    
+                    # [NEW] Logica Completamento Set
+                    if analysis.reps >= target_reps:
+                        # SET COMPLETATO!
+                        logging.info(f"Set {current_set} completed!")
+                        
+                        # 1. Salva il set nella sessione
+                        current_session.add_exercise({
+                            "name": ex_name,
+                            "set_index": current_set,
+                            "reps": analysis.reps,
+                            "config": ex_config
+                        })
+                        
+                        # 2. Passa a Pausa (o Finish se era l'ultimo)
+                        if current_set >= target_sets:
+                            workout_state = "FINISHED"
+                            current_session.end_session()
+                            db_manager.save_session(current_session)
+                        else:
+                            workout_state = "REST"
+                        
+                        # Resetta contatore esercizio per il prossimo set
+                        current_exercise.reset()
 
-                # [NEW] Logica di Salvataggio Esercizio
-                # Se le ripetizioni sono aumentate, salviamo il progresso
-                if analysis.reps > last_reps_count:
-                    # Aggiungiamo l'esercizio alla sessione (semplificato: ogni rep è un aggiornamento)
-                    # In realtà vorremmo salvare i SET, ma per ora salviamo l'aggiornamento
-                    # Rimuoviamo l'ultimo inserimento se esiste per aggiornare il conteggio
-                    # O meglio: aggiungiamo UN solo record "Bicep Curl" alla fine
-                    pass 
-                    last_reps_count = analysis.reps
-                    logging.info(f"Reps: {last_reps_count}")
+            # --- D. UI Overlay ---
+            
+            # Recupera nome tradotto dell'esercizio
+            # Se ex_name è "Bicep Curl", key="curl_name". Se "Squat", key="squat_name".
+            if "curl" in ex_name.lower():
+                display_name = i18n.get("curl_name")
+            elif "squat" in ex_name.lower():
+                display_name = i18n.get("squat_name")
+            else:
+                display_name = ex_name
 
-                # 3. UI Overlay (Dashboard & Feedback)
-                # Nota: 'analysis' contiene i dati grezzi, Visualizer sa come mostrarli
-                # analysis.correction ora dovrebbe essere una CHIAVE di traduzione o testo
-                # Per ora assumiamo che BicepCurl ritorni stringhe o chiavi. 
-                # (Se BicepCurl ritorna testo fisso, Visualizer proverà a tradurlo o lo mostrerà così com'è)
-                
-                visualizer.draw_dashboard(
-                    display_frame, 
-                    reps=analysis.reps, 
-                    state=analysis.stage, 
-                    feedback_key=analysis.correction # Passiamo la stringa di correzione
-                )
-                
-                # Opzionale: Disegna angolo gomito direttamente sul giunto
-                # Trova giunto gomito destro (index 8) o sinistro (7) in base alla config
-                elbow_idx = 8 if curl_exercise.side == "right" else 7
-                if len(keypoints) > elbow_idx:
-                    visualizer.draw_angle_arc(display_frame, keypoints[elbow_idx], analysis.angle)
+            # Mostra Dashboard (Standard)
+            visualizer.draw_dashboard(
+                display_frame,
+                exercise_name=display_name,
+                reps=dashboard_reps,
+                target_reps=target_reps,
+                current_set=current_set if current_set <= target_sets else target_sets,
+                target_sets=target_sets,
+                state=dashboard_state,
+                feedback_key=dashboard_feedback
+            )
+            
+            # Overlay Speciali (REST / FINISHED)
+            if workout_state == "REST":
+                draw_overlay_message(display_frame, i18n.get("ui_rest_title"), i18n.get("ui_rest_subtitle"))
+            elif workout_state == "FINISHED":
+                draw_overlay_message(display_frame, i18n.get("ui_finish_title"), i18n.get("ui_finish_subtitle"))
 
             # E. Output a Video
             cv2.imshow(i18n.get('ui_title'), display_frame)
 
-            # F. Gestione Uscita
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            # F. Gestione Input Tastiera
+            key = cv2.waitKey(1) & 0xFF
+            
+            if key == ord('q'):
                 break
+            
+            if workout_state == "REST" and (key == ord('c') or key == ord('C')):
+                # Inizia prossimo set
+                current_set += 1
+                workout_state = "EXERCISE"
+                logging.info(f"Starting Set {current_set}")
 
     except Exception as e:
         logging.critical(f"Crash improvviso: {e}", exc_info=True)
     finally:
-        # G. Cleanup (Rilascio risorse)
+        # G. Cleanup
         cam.release()
         cv2.destroyAllWindows()
         
-        # [NEW] Salvataggio Sessione
-        try:
-            if 'current_session' in locals():
-                # Aggiorniamo i dati della sessione con l'esercizio fatto
-                if last_reps_count > 0:
-                    current_session.add_exercise({
-                        "name": "Bicep Curl",
-                        "reps": last_reps_count,
-                        "valid": True, # Semplificazione
-                        "side": curl_exercise.side
-                    })
-                
-                current_session.end_session()
-                db_manager.save_session(current_session)
-                logging.info(f"Sessione {current_session.id} salvata nel DB.")
-        except Exception as e:
-            logging.error(f"Errore salvataggio sessione: {e}")
+        # Salvataggio di sicurezza se uscito forzatamente ma non finito
+        if 'current_session' in locals() and not current_session.end_time:
+             # Se la sessione non è stata chiusa (es. Quit a metà)
+             pass # Si potrebbe salvare parziale, ma lasciamo così per ora
 
         logging.info("Applicazione chiusa correttamente.")
+
+def workflow_completed(current_set, target_sets):
+    return current_set > target_sets
+
+def draw_overlay_message(frame, title, subtitle):
+    """
+    Disegna un overlay scuro a tutto schermo con un messaggio centrale.
+    """
+    h, w, _ = frame.shape
+    overlay = frame.copy()
+    cv2.rectangle(overlay, (0, 0), (w, h), (0, 0, 0), -1)
+    cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
+    
+    font = cv2.FONT_HERSHEY_DUPLEX
+    
+    # Title
+    t_size = cv2.getTextSize(title, font, 2.0, 3)[0]
+    t_x = (w - t_size[0]) // 2
+    t_y = (h // 2) - 20
+    cv2.putText(frame, title, (t_x, t_y), font, 2.0, (0, 255, 0), 3, cv2.LINE_AA)
+    
+    # Subtitle
+    s_size = cv2.getTextSize(subtitle, font, 1.0, 2)[0]
+    s_x = (w - s_size[0]) // 2
+    s_y = (h // 2) + 40
+    cv2.putText(frame, subtitle, (s_x, s_y), font, 1.0, (255, 255, 255), 2, cv2.LINE_AA)
 
 if __name__ == "__main__":
     main()

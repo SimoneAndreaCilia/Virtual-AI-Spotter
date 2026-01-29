@@ -48,9 +48,9 @@ class Visualizer:
                 if p1[0] > 0 and p1[1] > 0 and p2[0] > 0 and p2[1] > 0:
                     cv2.line(frame, p1, p2, COLORS["BLUE"], THICKNESS["SKELETON"])
 
-    def draw_dashboard(self, frame, reps, state, feedback_key):
+    def draw_dashboard(self, frame, exercise_name, reps, target_reps, current_set, target_sets, state, feedback_key):
         """
-        Disegna il pannello informativo (HUD) con conteggio e stato.
+        Disegna il pannello informativo (HUD) con conteggio serie/ripetizioni e stato.
         """
         # --- 1. Nuova Dashboard "Modern Style" ---
         
@@ -58,8 +58,8 @@ class Visualizer:
         
         # Configurazione Layout
         margin = 20
-        box_w = 300  # Aumentato da 260 a 300 per evitare overlap
-        box_h = 160
+        box_w = 300
+        box_h = 250 # Aumentato per far stare Titolo + 3 righe
         x1, y1 = margin, margin
         x2, y2 = x1 + box_w, y1 + box_h
         
@@ -67,38 +67,70 @@ class Visualizer:
         self._draw_rounded_rect(frame, (x1, y1), (x2, y2), COLORS["OVERLAY_BG"], 
                                 radius=15, alpha=0.7, border_color=COLORS["YELLOW"], border_thickness=1)
 
-        # Separatore orizzontale
-        center_y = y1 + (box_h // 2)
-        cv2.line(frame, (x1 + 10, center_y), (x2 - 10, center_y), COLORS["WHITE"], 1)
+        # Separatori orizzontali (Ora 4 sezioni)
+        row_h = box_h // 4
+        y_line1 = y1 + row_h
+        y_line2 = y1 + (row_h * 2)
+        y_line3 = y1 + (row_h * 3)
+        
+        cv2.line(frame, (x1 + 10, y_line1), (x2 - 10, y_line1), COLORS["WHITE"], 1)
+        cv2.line(frame, (x1 + 10, y_line2), (x2 - 10, y_line2), COLORS["WHITE"], 1)
+        cv2.line(frame, (x1 + 10, y_line3), (x2 - 10, y_line3), COLORS["WHITE"], 1)
 
         # Font setup
         font_label = cv2.FONT_HERSHEY_SIMPLEX
         font_val = cv2.FONT_HERSHEY_DUPLEX
         
-        # --- SEZIONE ALTA: RIPETIZIONI ---
-        # Icona Dumbbell (semplici cerchi + linea)
-        icon_x = x1 + 30
-        row1_y = y1 + (box_h // 4)
-        self._draw_dumbbell_icon(frame, (icon_x, row1_y), color=COLORS["WHITE"], size=20)
+        # --- RIGA 1: TITOLO ESERCIZIO ---
+        # Centrato
+        title_text = exercise_name.upper()
+        title_font_scale = 0.9
+        title_size = cv2.getTextSize(title_text, font_val, title_font_scale, 2)[0]
+        title_x = x1 + (box_w - title_size[0]) // 2
         
-        # Etichetta "Reps"
+        cv2.putText(frame, title_text, (title_x, y_line1 - 25), font_val, title_font_scale, COLORS["YELLOW"], 2, cv2.LINE_AA)
+
+        # --- RIGA 2: SETS (SERIE) ---
+        lbl_set = i18n.get("ui_set").upper()
+        cv2.putText(frame, lbl_set, (x1 + 20, y_line2 - 25), font_label, 0.7, COLORS["WHITE"], 1, cv2.LINE_AA)
+        
+        # Value "1 / 3"
+        set_str = f"{current_set} / {target_sets}"
+        set_size = cv2.getTextSize(set_str, font_val, 1.2, 2)[0]
+        set_x = x2 - 20 - set_size[0]
+        
+        cv2.putText(frame, set_str, (set_x + 2, y_line2 - 22), font_val, 1.2, COLORS["BLACK"], 4, cv2.LINE_AA)
+        cv2.putText(frame, set_str, (set_x, y_line2 - 24), font_val, 1.2, COLORS["YELLOW"], 2, cv2.LINE_AA)
+
+        # --- RIGA 3: REPS (RIPETIZIONI) ---
+        # Label "Reps"
         lbl_reps = i18n.get("ui_reps")
-        cv2.putText(frame, lbl_reps, (x1 + 60, row1_y + 8), font_label, 0.7, COLORS["WHITE"], 1, cv2.LINE_AA)
+        cv2.putText(frame, lbl_reps, (x1 + 20, y_line3 - 25), font_label, 0.7, COLORS["WHITE"], 1, cv2.LINE_AA)
         
-        # Valore Numerico (Allineato a destra)
-        reps_str = str(reps)
-        reps_size = cv2.getTextSize(reps_str, font_val, 1.5, 2)[0]
+        # Value "5 / 8"
+        reps_str = f"{reps} / {target_reps}"
+        reps_size = cv2.getTextSize(reps_str, font_val, 1.2, 2)[0]
         reps_x = x2 - 20 - reps_size[0]
         
-        # Ombra + Testo
-        cv2.putText(frame, reps_str, (reps_x + 2, row1_y + 12), font_val, 1.5, COLORS["BLACK"], 4, cv2.LINE_AA)
-        cv2.putText(frame, reps_str, (reps_x, row1_y + 10), font_val, 1.5, COLORS["WHITE"], 2, cv2.LINE_AA)
+        cv2.putText(frame, reps_str, (reps_x + 2, y_line3 - 22), font_val, 1.2, COLORS["BLACK"], 4, cv2.LINE_AA)
+        col_reps = COLORS["WHITE"]
+        if reps >= target_reps: col_reps = COLORS["GREEN"] # Evidenzia completamento
+        cv2.putText(frame, reps_str, (reps_x, y_line3 - 24), font_val, 1.2, col_reps, 2, cv2.LINE_AA)
 
-        # --- SEZIONE BASSA: FASE (STATE) ---
+        # --- RIGA 4: STATE (FASE) ---
+        # Label "Fase"
+        lbl_state = i18n.get("ui_state")
+        cv2.putText(frame, lbl_state, (x1 + 20, y2 - 25), font_label, 0.7, COLORS["WHITE"], 1, cv2.LINE_AA)
+
         # Mapping stato -> icona e colore
         state_key_map = {
             "up": ("curl_state_up", COLORS["GREEN"], "up"),
             "down": ("curl_state_down", (0, 165, 255), "down"), # Orange/Reddish
+            
+            # Squat States
+            "squat_up": ("squat_state_up", COLORS["GREEN"], "up"),
+            "squat_down": ("squat_state_down", (0, 165, 255), "down"),
+            
             "start": ("state_start", COLORS["WHITE"], "neutral"),
             "unknown": ("state_unknown", COLORS["GRAY"], "neutral")
         }
@@ -106,41 +138,30 @@ class Visualizer:
         tr_key, state_color, arrow_type = state_key_map.get(state, ("state_unknown", COLORS["GRAY"], "neutral"))
         state_text = i18n.get(tr_key)
         if state_text.startswith("MISSING"): state_text = state.upper()
-
-        row2_y = center_y + (box_h // 4)
         
-        # Icona Freccia
-        self._draw_arrow_icon(frame, (icon_x, row2_y), color=state_color, size=15, direction=arrow_type)
-
-        # Etichetta "Fase"
-        lbl_state = i18n.get("ui_state")
-        cv2.putText(frame, lbl_state, (x1 + 60, row2_y + 8), font_label, 0.7, COLORS["WHITE"], 1, cv2.LINE_AA)
-
-        # Calcolo precisi spazi per evitare overlap
+        # Value Stato (Allineato a destra)
+        # Troncare se troppo lungo (hard cap 18 chars)
+        if len(state_text) > 20: state_text = state_text[:20] + "..."
+        
+        # Calcolo dimensione Label "Fase" per evitare overlap
         label_size = cv2.getTextSize(lbl_state, font_label, 0.7, 1)[0]
-        label_end_x = x1 + 60 + label_size[0]
+        label_end_x = x1 + 20 + label_size[0]
         
-        # Spazio disponibile per il valore = (Fine Box - Padding) - (Fine Label + Padding)
         val_end_x = x2 - 20
-        max_val_width = val_end_x - (label_end_x + 15) # 15px di sicurezza
+        max_val_width = val_end_x - (label_end_x + 20) # 20px padding
         
-        # Valore Stato (Allineato a destra)
-        # Troncare se troppo lungo (hard cap 15 chars)
-        if len(state_text) > 15: state_text = state_text[:15] + "..."
-        
-        font_scale_st = 1.0
+        font_scale_st = 0.9
         state_size = cv2.getTextSize(state_text, font_val, font_scale_st, 2)[0]
         
-        # Riduci finché non entra (minimo 0.4)
-        while state_size[0] > max_val_width and font_scale_st > 0.4:
+        # Riduci finché non entra (minimo 0.5)
+        while state_size[0] > max_val_width and font_scale_st > 0.5:
             font_scale_st -= 0.1
             state_size = cv2.getTextSize(state_text, font_val, font_scale_st, 2)[0]
-
+            
         st_x = val_end_x - state_size[0]
         
-        # Ombra + Testo
-        cv2.putText(frame, state_text, (st_x + 2, row2_y + 12), font_val, font_scale_st, COLORS["BLACK"], 4, cv2.LINE_AA)
-        cv2.putText(frame, state_text, (st_x, row2_y + 10), font_val, font_scale_st, state_color, 2, cv2.LINE_AA)
+        cv2.putText(frame, state_text, (st_x + 2, y2 - 22), font_val, font_scale_st, COLORS["BLACK"], 4, cv2.LINE_AA)
+        cv2.putText(frame, state_text, (st_x, y2 - 24), font_val, font_scale_st, state_color, 2, cv2.LINE_AA)
 
         # --- 3. Feedback Dinamico (Grande e Centrale) ---
         self._draw_dynamic_feedback(frame, feedback_key, w)
