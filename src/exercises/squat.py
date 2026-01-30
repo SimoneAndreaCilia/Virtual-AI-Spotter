@@ -2,6 +2,7 @@ import numpy as np
 from typing import Dict, Any
 from src.core.interfaces import Exercise, AnalysisResult
 from src.utils.geometry import calculate_angle
+from src.utils.smoothing import PointSmoother
 from config.settings import SQUAT_THRESHOLDS, CONFIDENCE_THRESHOLD
 
 class Squat(Exercise):
@@ -14,13 +15,25 @@ class Squat(Exercise):
         # Per lo squat spesso si guarda di lato, quindi ha senso scegliere un lato.
         self.side = config.get("side", "right")
 
-    def process_frame(self, landmarks: np.ndarray) -> AnalysisResult:
+        # [NEW] Smoother per i keypoint critici (Anche, Ginocchia, Caviglie)
+        self.smoothers = {
+            11: PointSmoother(min_cutoff=0.1, beta=0.05), # L Hip
+            13: PointSmoother(min_cutoff=0.1, beta=0.05), # L Knee
+            15: PointSmoother(min_cutoff=0.1, beta=0.05), # L Ankle
+            12: PointSmoother(min_cutoff=0.1, beta=0.05), # R Hip
+            14: PointSmoother(min_cutoff=0.1, beta=0.05), # R Knee
+            16: PointSmoother(min_cutoff=0.1, beta=0.05), # R Ankle
+        }
+
+    def process_frame(self, landmarks: np.ndarray, timestamp: float = None) -> AnalysisResult:
         """
         Input: landmarks (Array 17x3 di YOLO: [x, y, conf])
         Output: AnalysisResult
         """
         
-        # --- 1. Selezione Keypoint ---
+        # --- 1. Smoothing & Selezione Keypoint ---
+        smoothed_landmarks = self.smooth_landmarks(landmarks, timestamp)
+
         # Mappa keypoint YOLOv8 (COCO format)
         idx_hip_l, idx_knee_l, idx_ankle_l = 11, 13, 15
         idx_hip_r, idx_knee_r, idx_ankle_r = 12, 14, 16
@@ -36,14 +49,20 @@ class Squat(Exercise):
         
         # --- Process Left ---
         if "left" in sides_to_process:
+             # Usiamo confidence originale
              if min(landmarks[idx_hip_l][2], landmarks[idx_knee_l][2], landmarks[idx_ankle_l][2]) >= CONFIDENCE_THRESHOLD:
-                angle_l = calculate_angle(landmarks[idx_hip_l][:2], landmarks[idx_knee_l][:2], landmarks[idx_ankle_l][:2])
+                # Usiamo smoothed coords
+                angle_l = calculate_angle(smoothed_landmarks[idx_hip_l][:2], 
+                                          smoothed_landmarks[idx_knee_l][:2], 
+                                          smoothed_landmarks[idx_ankle_l][:2])
                 valid_angles.append(angle_l)
 
         # --- Process Right ---
         if "right" in sides_to_process:
              if min(landmarks[idx_hip_r][2], landmarks[idx_knee_r][2], landmarks[idx_ankle_r][2]) >= CONFIDENCE_THRESHOLD:
-                angle_r = calculate_angle(landmarks[idx_hip_r][:2], landmarks[idx_knee_r][:2], landmarks[idx_ankle_r][:2])
+                angle_r = calculate_angle(smoothed_landmarks[idx_hip_r][:2], 
+                                          smoothed_landmarks[idx_knee_r][:2], 
+                                          smoothed_landmarks[idx_ankle_r][:2])
                 valid_angles.append(angle_r)
 
         # Se non abbiamo angoli validi (per i lati richiesti)
@@ -67,15 +86,33 @@ class Squat(Exercise):
         # DOWN: Angolo diminuisce (si scende) -> verso 90 gradi
         # UP: Angolo aumenta (si sale) -> verso 160+ gradi
         
-        if angle < self.down_threshold: # Sei sceso sotto i 90 (o soglia)
-            self.stage = "squat_down"
+        # LOGICA DI CONTEGGIO SQUAT
+        # DOWN: Angolo diminuisce (si scende) -> verso 90 gradi
+        # UP: Angolo aumenta (si sale) -> verso 160+ gradi
+        
+        # DOWN TRANSITION
+        if angle < self.down_threshold: # Sei sceso sotto i 90
+            # Debounce: conferma discesa solo se stabile
+            if self._is_stable_change(lambda x: x["angle"] < self.down_threshold + 5, consistency_frames=2):
+                self.stage = "squat_down"
             
+        # UP TRANSITION
         if angle > self.up_threshold and self.stage == "squat_down":
-            self.stage = "squat_up"
-            self.reps += 1
+            # Debounce: conferma risalita
+            if self._is_stable_change(lambda x: x["angle"] > self.up_threshold - 5, consistency_frames=2):
+                self.stage = "squat_up"
+                self.reps += 1
             
         # LOGICA DI CORREZIONE
         
+        # [NEW] Aggiornamento Storia
+        self.history.append({
+            "angle": angle,
+            "stage": self.stage,
+            "reps": self.reps,
+            "is_valid": is_valid
+        })
+
         return AnalysisResult(
             reps=self.reps,
             stage=self.stage,
@@ -85,5 +122,4 @@ class Squat(Exercise):
         )
 
     def reset(self):
-        self.reps = 0
-        self.stage = "start"
+        super().reset()

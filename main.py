@@ -214,7 +214,8 @@ def main():
 
                 if workout_state == "EXERCISE":
                     # --- 2. Analisi Esercizio ---
-                    analysis = current_exercise.process_frame(keypoints)
+                    # Passiamo il timestamp attuale per gestire correttamente lo smoothing OneEuro
+                    analysis = current_exercise.process_frame(keypoints, timestamp=time.time())
                     
                     dashboard_reps = analysis.reps
                     dashboard_state = analysis.stage
