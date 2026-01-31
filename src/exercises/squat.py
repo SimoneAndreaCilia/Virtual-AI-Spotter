@@ -3,17 +3,17 @@ from typing import Dict, Any
 from src.core.interfaces import Exercise, AnalysisResult
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
+from src.core.fsm import RepetitionCounter
+from src.core.feedback import FeedbackSystem
 from config.settings import SQUAT_THRESHOLDS, CONFIDENCE_THRESHOLD, HYSTERESIS_TOLERANCE
 
 class Squat(Exercise):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
-        self.up_threshold = config.get("up_angle", SQUAT_THRESHOLDS["UP_ANGLE"])
-        self.down_threshold = config.get("down_angle", SQUAT_THRESHOLDS["DOWN_ANGLE"])
+        
         self.display_name_key = "squat_name"
         
         # Lato del corpo da analizzare: 'right' (default) o 'left'
-        # Per lo squat spesso si guarda di lato, quindi ha senso scegliere un lato.
         self.side = config.get("side", "right")
 
         # [NEW] Smoother per i keypoint critici (Anche, Ginocchia, Caviglie)
@@ -25,6 +25,17 @@ class Squat(Exercise):
             14: PointSmoother(min_cutoff=0.1, beta=0.05), # R Knee
             16: PointSmoother(min_cutoff=0.1, beta=0.05), # R Ankle
         }
+
+        # --- NEW ARCHITECTURE ---
+        self.fsm = RepetitionCounter(
+            up_threshold=config.get("up_angle", SQUAT_THRESHOLDS["UP_ANGLE"]),
+            down_threshold=config.get("down_angle", SQUAT_THRESHOLDS["DOWN_ANGLE"]),
+            start_stage="squat_up"
+        )
+        self.feedback = FeedbackSystem()
+        
+        # Future-proof: Add depth verification or specific squat rules here?
+        # self.feedback.add_rule(condition=..., message_key="squat_too_shallow")
 
     def process_frame(self, landmarks: np.ndarray, timestamp: float = None) -> AnalysisResult:
         """
@@ -69,7 +80,7 @@ class Squat(Exercise):
         # Se non abbiamo angoli validi (per i lati richiesti)
         if len(valid_angles) < len(sides_to_process):
              return AnalysisResult(
-                reps=self.reps,
+                reps=self.reps, # Track internal refs
                 stage="unknown",
                 correction="err_body_not_visible",
                 angle=0.0,
@@ -79,32 +90,25 @@ class Squat(Exercise):
         # --- 2. Calcolo Geometrico (Media) ---
         angle = np.mean(valid_angles)
 
-        # --- 3. Macchina a Stati (FSM) ---
-        correction_feedback = "squat_perfect_form"
-        is_valid = True
+        # --- 3. Delegate to Subsystems ---
+        
+        # A. FSM Rep Counting
+        self.reps, stage_raw = self.fsm.process(angle)
+        
+        # Map FSM generic states to Squat specific
+        if stage_raw == "up":
+            self.stage = "squat_up"
+        elif stage_raw == "down":
+            self.stage = "squat_down"
+        else:
+            self.stage = stage_raw
 
-        # LOGICA DI CONTEGGIO SQUAT
-        # DOWN: Angolo diminuisce (si scende) -> verso 90 gradi
-        # UP: Angolo aumenta (si sale) -> verso 160+ gradi
+        # B. Feedback System
+        feedback_ctx = {"angle": angle, "stage": self.stage}
+        correction_feedback, is_valid = self.feedback.check(feedback_ctx)
         
-        # LOGICA DI CONTEGGIO SQUAT
-        # DOWN: Angolo diminuisce (si scende) -> verso 90 gradi
-        # UP: Angolo aumenta (si sale) -> verso 160+ gradi
-        
-        # DOWN TRANSITION
-        if angle < self.down_threshold: # Sei sceso sotto i 90
-            # Debounce: conferma discesa solo se stabile
-            if self._is_stable_change(lambda x: x["angle"] < self.down_threshold + HYSTERESIS_TOLERANCE, consistency_frames=2):
-                self.stage = "squat_down"
-            
-        # UP TRANSITION
-        if angle > self.up_threshold and self.stage == "squat_down":
-            # Debounce: conferma risalita
-            if self._is_stable_change(lambda x: x["angle"] > self.up_threshold - HYSTERESIS_TOLERANCE, consistency_frames=2):
-                self.stage = "squat_up"
-                self.reps += 1
-            
-        # LOGICA DI CORREZIONE
+        if correction_feedback == "feedback_perfect":
+            correction_feedback = "squat_perfect_form"
         
         # [NEW] Aggiornamento Storia
         self.history.append({
@@ -124,3 +128,5 @@ class Squat(Exercise):
 
     def reset(self):
         super().reset()
+        self.fsm.reset()
+        self.feedback.reset()
