@@ -3,7 +3,7 @@ from typing import Dict, Any
 from src.core.interfaces import Exercise, AnalysisResult
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
-from config.settings import SQUAT_THRESHOLDS, CONFIDENCE_THRESHOLD
+from config.settings import SQUAT_THRESHOLDS, CONFIDENCE_THRESHOLD, HYSTERESIS_TOLERANCE
 
 class Squat(Exercise):
     def __init__(self, config: Dict[str, Any]):
@@ -94,13 +94,13 @@ class Squat(Exercise):
         # DOWN TRANSITION
         if angle < self.down_threshold: # Sei sceso sotto i 90
             # Debounce: conferma discesa solo se stabile
-            if self._is_stable_change(lambda x: x["angle"] < self.down_threshold + 5, consistency_frames=2):
+            if self._is_stable_change(lambda x: x["angle"] < self.down_threshold + HYSTERESIS_TOLERANCE, consistency_frames=2):
                 self.stage = "squat_down"
             
         # UP TRANSITION
         if angle > self.up_threshold and self.stage == "squat_down":
             # Debounce: conferma risalita
-            if self._is_stable_change(lambda x: x["angle"] > self.up_threshold - 5, consistency_frames=2):
+            if self._is_stable_change(lambda x: x["angle"] > self.up_threshold - HYSTERESIS_TOLERANCE, consistency_frames=2):
                 self.stage = "squat_up"
                 self.reps += 1
             

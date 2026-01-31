@@ -3,7 +3,7 @@ from typing import Dict, Any, Tuple
 from src.core.interfaces import Exercise, AnalysisResult
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
-from config.settings import CURL_THRESHOLDS, CONFIDENCE_THRESHOLD
+from config.settings import CURL_THRESHOLDS, CONFIDENCE_THRESHOLD, HYSTERESIS_TOLERANCE
 
 class BicepCurl(Exercise):
     def __init__(self, config: Dict[str, Any]):
@@ -91,13 +91,13 @@ class BicepCurl(Exercise):
         if angle > self.down_threshold:
             # Verifica se anche negli ultimi 2 frame eravamo in zona "down" (o quasi)
             # Usiamo una soglia leggermente tollerante per la storia per evitare sfarfallio sui bordi
-            if self._is_stable_change(lambda x: x["angle"] > self.down_threshold - 5, consistency_frames=2):
+            if self._is_stable_change(lambda x: x["angle"] > self.down_threshold - HYSTERESIS_TOLERANCE, consistency_frames=2):
                 self.stage = "down"
             
         # UP TRANSITION
         if angle < self.up_threshold and self.stage == "down":
             # Verifica stabilità della chiusura (contrazione)
-            if self._is_stable_change(lambda x: x["angle"] < self.up_threshold + 5, consistency_frames=2):
+            if self._is_stable_change(lambda x: x["angle"] < self.up_threshold + HYSTERESIS_TOLERANCE, consistency_frames=2):
                 self.stage = "up"
                 self.reps += 1
                 # Qui potremmo aggiungere logica per resettare errori se necessario

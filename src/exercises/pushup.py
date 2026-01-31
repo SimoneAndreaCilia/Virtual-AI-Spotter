@@ -3,7 +3,7 @@ from typing import Dict, Any, List, Optional
 from src.core.interfaces import Exercise, AnalysisResult
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
-from config.settings import CONFIDENCE_THRESHOLD
+from config.settings import CONFIDENCE_THRESHOLD, HYSTERESIS_TOLERANCE
 
 class PushUp(Exercise):
     def __init__(self, config: Dict[str, Any]):
@@ -164,13 +164,13 @@ class PushUp(Exercise):
         # DOWN TRANSITION
         if current_angle < self.down_threshold:
             # Debounce: Confirm descent
-            if self._is_stable_change(lambda x: x["angle"] < self.down_threshold + 5, consistency_frames=2):
+            if self._is_stable_change(lambda x: x["angle"] < self.down_threshold + HYSTERESIS_TOLERANCE, consistency_frames=2):
                 self.stage = "pushup_down"
             
         # UP TRANSITION
         if current_angle > self.up_threshold and self.stage == "pushup_down":
             # Debounce: Confirm ascent (extension)
-            if self._is_stable_change(lambda x: x["angle"] > self.up_threshold - 5, consistency_frames=2):
+            if self._is_stable_change(lambda x: x["angle"] > self.up_threshold - HYSTERESIS_TOLERANCE, consistency_frames=2):
                 self.stage = "pushup_up"
                 self.reps += 1
                 # Optional: Reset error state logic if needed based on the rep cycle
