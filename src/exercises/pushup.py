@@ -3,7 +3,9 @@ from typing import Dict, Any, List, Optional
 from src.core.interfaces import Exercise, AnalysisResult
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
-from config.settings import CONFIDENCE_THRESHOLD
+from src.core.fsm import RepetitionCounter
+from src.core.feedback import FeedbackSystem
+from config.settings import CONFIDENCE_THRESHOLD, HYSTERESIS_TOLERANCE
 
 class PushUp(Exercise):
     def __init__(self, config: Dict[str, Any]):
@@ -14,9 +16,6 @@ class PushUp(Exercise):
         if not all(k in config for k in required_keys):
             raise ValueError(f"PushUp configuration error: Missing keys {required_keys}. Received: {list(config.keys())}")
 
-        self.up_threshold = config["up_angle"]
-        self.down_threshold = config["down_angle"]
-        self.form_threshold_min = config["form_angle_min"]
         self.display_name_key = "pushup_name"
         
         # Side to analyze: 'left', 'right', or 'auto' (based on confidence/visibility)
@@ -24,8 +23,6 @@ class PushUp(Exercise):
         self.side = config.get("side", "left")
 
         # Configure smoothers for key joints
-        # Reps: Shoulder, Elbow, Wrist
-        # Form: Shoulder, Hip, Ankle
         self.smoothers = {
             # Left Side
             5: PointSmoother(min_cutoff=0.1, beta=0.05),  # L Shoulder
@@ -41,6 +38,23 @@ class PushUp(Exercise):
             12: PointSmoother(min_cutoff=0.1, beta=0.05), # R Hip
             16: PointSmoother(min_cutoff=0.1, beta=0.05)  # R Ankle
         }
+
+        # --- NEW ARCHITECTURE: FSM & Feedback ---
+        self.fsm = RepetitionCounter(
+            up_threshold=config["up_angle"], 
+            down_threshold=config["down_angle"],
+            start_stage="pushup_up" # Start assuming extended arms usually
+        )
+        
+        self.feedback = FeedbackSystem()
+        
+        # Rule 1: Back Straightness (Priority 5 - Medium)
+        form_min = config["form_angle_min"]
+        self.feedback.add_rule(
+            condition=lambda ctx: ctx.get("body_angle", 180) < form_min,
+            message_key="pushup_warn_back",
+            priority=5
+        )
 
     def process_frame(self, landmarks: np.ndarray, timestamp: float = None) -> AnalysisResult:
         """
@@ -138,42 +152,37 @@ class PushUp(Exercise):
         else:
              # No valid sides
              return AnalysisResult(
-                reps=self.reps,
+                reps=self.reps, # Use internal tracked reps
                 stage="unknown",
                 correction="err_body_not_visible",
                 angle=0.0,
                 is_valid=False
             )
 
-        # --- 3. FSM (Finite State Machine) ---
-        correction_feedback = "pushup_perfect_form"
-        is_valid = True
-
-        # FORM CHECK Logic
-        # Body must be straight (~180 degrees)
-        # We check if it deviates significantly below threshold (e.g. < 160)
-        # Note: calculate_angle returns [0, 180]. So 180 is max.
-        if current_body_angle < self.form_threshold_min:
-            correction_feedback = "pushup_warn_back" # "Occhio alla schiena"
-            is_valid = True # [UX] Permissive: Count the rep but show warning
-
-        # COUNTING LOGIC
-        # DOWN: Elbow angle decreases -> < 90
-        # UP: Elbow angle increases -> > 160
+        # --- 3. Delegate to Subsystems ---
         
-        # DOWN TRANSITION
-        if current_angle < self.down_threshold:
-            # Debounce: Confirm descent
-            if self._is_stable_change(lambda x: x["angle"] < self.down_threshold + 5, consistency_frames=2):
-                self.stage = "pushup_down"
-            
-        # UP TRANSITION
-        if current_angle > self.up_threshold and self.stage == "pushup_down":
-            # Debounce: Confirm ascent (extension)
-            if self._is_stable_change(lambda x: x["angle"] > self.up_threshold - 5, consistency_frames=2):
-                self.stage = "pushup_up"
-                self.reps += 1
-                # Optional: Reset error state logic if needed based on the rep cycle
+        # A. Status & Counting (FSM)
+        self.reps, stage_raw = self.fsm.process(current_angle)
+        
+        # Map generic FSM state to specific PushUp state
+        if stage_raw == "up":
+            self.stage = "pushup_up"
+        elif stage_raw == "down":
+            self.stage = "pushup_down"
+        else:
+            self.stage = stage_raw
+
+        # B. Feedback Check
+        feedback_ctx = {
+            "angle": current_angle,
+            "body_angle": current_body_angle,
+            "stage": self.stage
+        }
+        correction_feedback, is_valid = self.feedback.check(feedback_ctx)
+        
+        # UX: If "perfect", ensure we map to pushup specific absolute key if needed
+        if correction_feedback == "feedback_perfect":
+            correction_feedback = "pushup_perfect_form"
 
         # --- History Update ---
         self.history.append({
@@ -194,3 +203,5 @@ class PushUp(Exercise):
 
     def reset(self):
         super().reset()
+        self.fsm.reset()
+        self.feedback.reset()

@@ -48,6 +48,7 @@ PUSHUP_THRESHOLDS = {
 
 # Parametri Smoothing (Strutture Dati)
 BUFFER_SIZE = 10           # Numero di frame per la media mobile (riduce il tremolio)
+HYSTERESIS_TOLERANCE = 5   # Tolleranza (gradi) per il debouncing del cambio stato (es. +5/-5)
 
 # --- 5. VISUALIZZAZIONE (UI) ---
 # Colori in formato BGR (Blue, Green, Red) per OpenCV

@@ -3,21 +3,19 @@ from typing import Dict, Any, Tuple
 from src.core.interfaces import Exercise, AnalysisResult
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
-from config.settings import CURL_THRESHOLDS, CONFIDENCE_THRESHOLD
+from src.core.fsm import RepetitionCounter
+from src.core.feedback import FeedbackSystem
+from config.settings import CURL_THRESHOLDS, CONFIDENCE_THRESHOLD, HYSTERESIS_TOLERANCE
 
 class BicepCurl(Exercise):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
-        # Soglie angolari (configurabili o di default da settings)
-        self.up_threshold = config.get("up_angle", CURL_THRESHOLDS["UP_ANGLE"])
-        self.down_threshold = config.get("down_angle", CURL_THRESHOLDS["DOWN_ANGLE"])
         self.display_name_key = "curl_name"
         
         # Lato del corpo da analizzare: 'right' o 'left'
         self.side = config.get("side", "right")
 
         # [NEW] Smoother per i keypoint critici (Spalla, Gomito, Polso per entrambi i lati)
-        # 0.005 beta e 1.0 min_cutoff sono valori empirici per buon smoothing con poco lag
         self.smoothers = {
             5: PointSmoother(min_cutoff=0.1, beta=0.05), # L Shoulder
             7: PointSmoother(min_cutoff=0.1, beta=0.05), # L Elbow
@@ -26,6 +24,27 @@ class BicepCurl(Exercise):
             8: PointSmoother(min_cutoff=0.1, beta=0.05), # R Elbow
             10: PointSmoother(min_cutoff=0.1, beta=0.05) # R Wrist
         }
+        
+        # --- NEW ARCHITECTURE ---
+        # Curl Logic is INVERTED compared to Squat:
+        # "UP" (Concentrica) is SMALL angle (<30)
+        # "DOWN" (Eccentrica) is LARGE angle (>160)
+        # We use the 'inverted' flag in FSM
+        self.fsm = RepetitionCounter(
+            up_threshold=config.get("up_angle", CURL_THRESHOLDS["UP_ANGLE"]),
+            down_threshold=config.get("down_angle", CURL_THRESHOLDS["DOWN_ANGLE"]),
+            start_stage="down", # Start extended
+            inverted=True 
+        )
+        self.feedback = FeedbackSystem()
+        
+        # Rule: Full Extension Logic handled by FSM state check?
+        # Rule: Flexion Error
+        self.feedback.add_rule(
+            condition=lambda ctx: ctx["stage"] == "up" and ctx["angle"] > 90,
+            message_key="curl_err_flexion",
+            priority=5
+        )
 
     def process_frame(self, landmarks: np.ndarray, timestamp: float = None) -> AnalysisResult:
         """
@@ -34,7 +53,6 @@ class BicepCurl(Exercise):
         """
         
         # --- 1. Smoothing & Selezione Keypoint ---
-        # Applichiamo lo smoothing (metodo base)
         smoothed_landmarks = self.smooth_landmarks(landmarks, timestamp)
 
         idx_shoulder_l, idx_elbow_l, idx_wrist_l = 5, 7, 9
@@ -51,9 +69,7 @@ class BicepCurl(Exercise):
 
         # --- Process Left ---
         if "left" in sides_to_process:
-             # Usiamo la confidence originale per decidere se calcolare
              if min(landmarks[idx_shoulder_l][2], landmarks[idx_elbow_l][2], landmarks[idx_wrist_l][2]) >= CONFIDENCE_THRESHOLD:
-                # Usiamo coordinate SMOOTHED per l'angolo
                 angle_l = calculate_angle(smoothed_landmarks[idx_shoulder_l][:2], 
                                           smoothed_landmarks[idx_elbow_l][:2], 
                                           smoothed_landmarks[idx_wrist_l][:2])
@@ -80,33 +96,18 @@ class BicepCurl(Exercise):
         # --- 2. Calcolo Geometrico (Media) ---
         angle = np.mean(valid_angles)
 
-        # --- 3. Macchina a Stati (FSM) ---
-        correction_feedback = "curl_perfect_form"
-        is_valid = True
-
-        # LOGICA DI CONTEGGIO
-        # [MODIFIED] Debouncing: Conferma lo stato solo se stabile per N frame
+        # --- 3. Delegate to Subsystems ---
         
-        # DOWN TRANSITION
-        if angle > self.down_threshold:
-            # Verifica se anche negli ultimi 2 frame eravamo in zona "down" (o quasi)
-            # Usiamo una soglia leggermente tollerante per la storia per evitare sfarfallio sui bordi
-            if self._is_stable_change(lambda x: x["angle"] > self.down_threshold - 5, consistency_frames=2):
-                self.stage = "down"
-            
-        # UP TRANSITION
-        if angle < self.up_threshold and self.stage == "down":
-            # Verifica stabilità della chiusura (contrazione)
-            if self._is_stable_change(lambda x: x["angle"] < self.up_threshold + 5, consistency_frames=2):
-                self.stage = "up"
-                self.reps += 1
-                # Qui potremmo aggiungere logica per resettare errori se necessario
-
-        # LOGICA DI CORREZIONE (Esempio semplice)
-        # Se nello stato UP l'angolo è ancora troppo aperto (> 90), non sta chiudendo bene
-        if self.stage == "up" and angle > 90:
-            correction_feedback = "curl_err_flexion"
-            is_valid = False
+        # A. FSM Rep Counting
+        self.reps, stage_raw = self.fsm.process(angle)
+        self.stage = stage_raw # "up" or "down" (generic)
+        
+        # B. Feedback System
+        feedback_ctx = {"angle": angle, "stage": self.stage}
+        correction_feedback, is_valid = self.feedback.check(feedback_ctx)
+        
+        if correction_feedback == "feedback_perfect":
+             correction_feedback = "curl_perfect_form"
 
         # [NEW] Aggiornamento Storia
         self.history.append({
@@ -126,3 +127,5 @@ class BicepCurl(Exercise):
 
     def reset(self):
         super().reset()
+        self.fsm.reset()
+        self.feedback.reset()

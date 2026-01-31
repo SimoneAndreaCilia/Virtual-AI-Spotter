@@ -1,4 +1,4 @@
-import numpy as np
+import math
 from typing import Tuple
 
 def calculate_angle(a: Tuple[float, float], 
@@ -16,24 +16,38 @@ def calculate_angle(a: Tuple[float, float],
     Returns:
         float: Angolo in gradi (0-180)
     """
-    # Convertiamo in array numpy per efficienza vettoriale
-    a = np.array(a)
-    b = np.array(b)
-    c = np.array(c)
+    # Estraiamo le coordinate per chiarezza e velocità (evita overhead NumPy)
+    ax, ay = a[0], a[1]
+    bx, by = b[0], b[1]
+    cx, cy = c[0], c[1]
     
     # Calcoliamo i vettori BA e BC
-    # Esempio: vettore BA = A - B
-    ba = a - b
-    bc = c - b
+    # Vettore BA = A - B
+    ba_x = ax - bx
+    ba_y = ay - by
     
-    # Calcoliamo il coseno dell'angolo usando il prodotto scalare (dot product)
-    # Formula: cos(theta) = (u . v) / (|u| * |v|)
-    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-6)
+    # Vettore BC = C - B
+    bc_x = cx - bx
+    bc_y = cy - by
     
-    # Gestione errori numerici: clippiamo il valore tra -1.0 e 1.0
-    cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
+    # Prodotto scalare (Dot Product)
+    dot_product = (ba_x * bc_x) + (ba_y * bc_y)
     
-    # Convertiamo da radianti a gradi
-    angle = np.degrees(np.arccos(cosine_angle))
+    # Magnitudo (Lunghezza) dei vettori
+    mag_ba = math.sqrt(ba_x**2 + ba_y**2)
+    mag_bc = math.sqrt(bc_x**2 + bc_y**2)
+    
+    # Evitiamo divisione per zero
+    if mag_ba * mag_bc == 0:
+        return 0.0
+        
+    # Calcolo del coseno
+    cosine_angle = dot_product / (mag_ba * mag_bc)
+    
+    # Gestione errori numerici (clamp tra -1.0 e 1.0)
+    cosine_angle = max(-1.0, min(1.0, cosine_angle))
+    
+    # Calcolo angolo in radianti e conversione in gradi
+    angle = math.degrees(math.acos(cosine_angle))
     
     return round(angle, 2)
