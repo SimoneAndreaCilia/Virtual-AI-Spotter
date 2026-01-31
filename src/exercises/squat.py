@@ -10,6 +10,7 @@ class Squat(Exercise):
         super().__init__(config)
         self.up_threshold = config.get("up_angle", SQUAT_THRESHOLDS["UP_ANGLE"])
         self.down_threshold = config.get("down_angle", SQUAT_THRESHOLDS["DOWN_ANGLE"])
+        self.display_name_key = "squat_name"
         
         # Lato del corpo da analizzare: 'right' (default) o 'left'
         # Per lo squat spesso si guarda di lato, quindi ha senso scegliere un lato.

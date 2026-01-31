@@ -35,9 +35,17 @@ TRANSLATIONS = {
         "squat_perfect_form": "Ottimo Squat!",
         "squat_err_depth": "Scendi di più! (Sotto 90°)",
         
+        # --- PUSH UP (Feedback) ---
+        "pushup_name": "Push Up",
+        "pushup_perfect_form": "Push Up Perfetto!",
+        "pushup_err_back": "Schiena dritta! Non inarcare.",
+        "pushup_warn_back": "Occhio alla schiena",
+        "pushup_state_up": "SU (Braccia Tese)",
+        "pushup_state_down": "GIU (Piegamento)",
+        
         # --- NEW CLI & OVERLAY STRINGS ---
         "ui_workout_setup": "IMPOSTAZIONE WORKOUT",
-        "ui_select_ex": "Seleziona Esercizio (1-2)",
+        "ui_select_ex": "Seleziona Esercizio (1-3)",
         "ui_selected": "Selezionato",
         "ui_side_choice": "Lato (Sinistro 'L' / Destro 'R' / Entrambi 'B') [Default R]",
         "ui_side_val": "LATO",
@@ -89,9 +97,17 @@ TRANSLATIONS = {
         "squat_perfect_form": "Great Squat!",
         "squat_err_depth": "Go lower! (Below 90°)",
         
+        # --- PUSH UP (Feedback) ---
+        "pushup_name": "Push Up",
+        "pushup_perfect_form": "Perfect Push Up!",
+        "pushup_err_back": "Keep back straight!",
+        "pushup_warn_back": "Check your back",
+        "pushup_state_up": "UP (Arms Extended)",
+        "pushup_state_down": "DOWN (Pushing)",
+        
         # --- NEW CLI & OVERLAY STRINGS ---
         "ui_workout_setup": "WORKOUT SETUP",
-        "ui_select_ex": "Select Exercise (1-2)",
+        "ui_select_ex": "Select Exercise (1-3)",
         "ui_selected": "Selected",
         "ui_side_choice": "Side (Left 'L' / Right 'R' / Both 'B') [Default R]",
         "ui_side_val": "SIDE",

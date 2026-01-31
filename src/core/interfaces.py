@@ -30,6 +30,9 @@ class Exercise(ABC):
         self.history = deque(maxlen=30)
         # [NEW] Dizionario dei filtri per i keypoint (Idx -> PointSmoother)
         self.smoothers: Dict[int, Any] = {}
+        
+        # [NEW] Chiave per localizzazione nome esercizio (OCP)
+        self.display_name_key: str = ""
 
     def smooth_landmarks(self, landmarks: np.ndarray, timestamp: float = None) -> np.ndarray:
         """

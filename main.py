@@ -14,7 +14,7 @@ from src.core.entities.session import Session
 
 from config.settings import (
     MODEL_PATH, DEVICE, CAMERA_ID, 
-    CURL_THRESHOLDS, SQUAT_THRESHOLDS, LOGS_DIR
+    CURL_THRESHOLDS, SQUAT_THRESHOLDS, PUSHUP_THRESHOLDS, LOGS_DIR
 )
 from config.translation_strings import i18n
 
@@ -62,6 +62,7 @@ def select_exercise_settings():
     # 1. Scelta Esercizio
     print(" 1. Bicep Curl")
     print(" 2. Squat")
+    print(" 3. Push Up")
     
     ex_choice = input(f"\n{i18n.get('ui_quit')} ({i18n.get('ui_select_ex')}): ").strip()
     
@@ -73,6 +74,13 @@ def select_exercise_settings():
         config = {
             "up_angle": SQUAT_THRESHOLDS["UP_ANGLE"],
             "down_angle": SQUAT_THRESHOLDS["DOWN_ANGLE"]
+        }
+    elif ex_choice == '3':
+        exercise_name = "PushUp"
+        config = {
+            "up_angle": PUSHUP_THRESHOLDS["UP_ANGLE"],
+            "down_angle": PUSHUP_THRESHOLDS["DOWN_ANGLE"],
+            "form_angle_min": PUSHUP_THRESHOLDS["FORM_ANGLE_MIN"]
         }
     else:
         # Default o Scelta 1
@@ -247,14 +255,8 @@ def main():
 
             # --- D. UI Overlay ---
             
-            # Recupera nome tradotto dell'esercizio
-            # Se ex_name è "Bicep Curl", key="curl_name". Se "Squat", key="squat_name".
-            if "curl" in ex_name.lower():
-                display_name = i18n.get("curl_name")
-            elif "squat" in ex_name.lower():
-                display_name = i18n.get("squat_name")
-            else:
-                display_name = ex_name
+            # Recupera nome tradotto dell'esercizio (OCP compliant)
+            display_name = i18n.get(current_exercise.display_name_key)
 
             # Mostra Dashboard (Standard)
             visualizer.draw_dashboard(
