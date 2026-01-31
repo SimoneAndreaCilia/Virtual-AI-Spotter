@@ -173,28 +173,49 @@ class Visualizer:
     def _draw_rounded_rect(self, img, pt1, pt2, color, radius=15, alpha=0.5, border_color=None, border_thickness=1):
         """
         Disegna un rettangolo arrotondato con riempimento semi-trasparente e bordo opzionale.
+        Ottimizzato per Performance: usa ROI (Region of Interest) invece di copiare l'intera immagine.
         """
         x1, y1 = pt1
         x2, y2 = pt2
         
-        # Crea overlay per la trasparenza
-        overlay = img.copy()
+        # Validazione e Clamping coordinate (per sicurezza)
+        h_img, w_img = img.shape[:2]
+        x1 = max(0, min(x1, w_img))
+        y1 = max(0, min(y1, h_img))
+        x2 = max(0, min(x2, w_img))
+        y2 = max(0, min(y2, h_img))
         
-        # Disegna i 4 cerchi agli angoli e i rettangoli di connessione (sul layer overlay)
-        # Angoli
-        cv2.circle(overlay, (x1+radius, y1+radius), radius, color, -1)
-        cv2.circle(overlay, (x1+radius, y2-radius), radius, color, -1)
-        cv2.circle(overlay, (x2-radius, y1+radius), radius, color, -1)
-        cv2.circle(overlay, (x2-radius, y2-radius), radius, color, -1)
+        # Assicuriamoci che x1 < x2 e y1 < y2
+        if x1 >= x2 or y1 >= y2:
+            return
+
+        roi_w = x2 - x1
+        roi_h = y2 - y1
         
-        # Corpi centrali
-        cv2.rectangle(overlay, (x1+radius, y1), (x2-radius, y2), color, -1)
-        cv2.rectangle(overlay, (x1, y1+radius), (x2, y2-radius), color, -1)
+        # 1. Estraiamo la ROI (Region of Interest) dall'immagine originale
+        roi = img[y1:y2, x1:x2]
         
-        # Applica alpha blending
-        cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
+        # 2. Creiamo una copia della ROI su cui disegnare (buffer molto più piccolo del frame intero)
+        overlay_roi = roi.copy()
         
-        # Disegna il bordo (se richiesto) direttamente sull'immagine finale (non trasparente)
+        # 3. Disegniamo le forme su overlay_roi usando coordinate RELATIVE (0,0 è l'angolo in alto a sx della ROI)
+        # Angoli (Cerchi)
+        cv2.circle(overlay_roi, (radius, radius), radius, color, -1)
+        cv2.circle(overlay_roi, (radius, roi_h - radius), radius, color, -1)
+        cv2.circle(overlay_roi, (roi_w - radius, radius), radius, color, -1)
+        cv2.circle(overlay_roi, (roi_w - radius, roi_h - radius), radius, color, -1)
+        
+        # Rettangoli di connessione (Corpo centrale)
+        cv2.rectangle(overlay_roi, (radius, 0), (roi_w - radius, roi_h), color, -1)
+        cv2.rectangle(overlay_roi, (0, radius), (roi_w, roi_h - radius), color, -1)
+        
+        # 4. Alpha Blending solo sulla ROI
+        cv2.addWeighted(overlay_roi, alpha, roi, 1 - alpha, 0, roi)
+        
+        # 5. Reinseriamo la ROI nell'immagine originale (In-place modification)
+        img[y1:y2, x1:x2] = roi
+        
+        # 6. Disegna il bordo (Opzionale) - Questo lo facciamo sull'immagine principale per semplicità
         if border_color and border_thickness > 0:
             # Linee rette
             cv2.line(img, (x1+radius, y1), (x2-radius, y1), border_color, border_thickness)
