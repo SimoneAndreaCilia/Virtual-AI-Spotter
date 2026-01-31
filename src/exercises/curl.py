@@ -11,6 +11,7 @@ class BicepCurl(Exercise):
         # Soglie angolari (configurabili o di default da settings)
         self.up_threshold = config.get("up_angle", CURL_THRESHOLDS["UP_ANGLE"])
         self.down_threshold = config.get("down_angle", CURL_THRESHOLDS["DOWN_ANGLE"])
+        self.display_name_key = "curl_name"
         
         # Lato del corpo da analizzare: 'right' o 'left'
         self.side = config.get("side", "right")

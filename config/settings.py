@@ -39,6 +39,13 @@ CURL_THRESHOLDS = {
     "ERROR_ELBOW": 15      # Tolleranza movimento gomito (se si muove troppo è errore)
 }
 
+# Parametri Push Up
+PUSHUP_THRESHOLDS = {
+    "UP_ANGLE": 160,       # Arms extended
+    "DOWN_ANGLE": 90,      # Arms bent at 90 degrees
+    "FORM_ANGLE_MIN": 160  # Body line tolerance (approx 180 is straight)
+}
+
 # Parametri Smoothing (Strutture Dati)
 BUFFER_SIZE = 10           # Numero di frame per la media mobile (riduce il tremolio)
 

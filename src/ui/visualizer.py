@@ -131,6 +131,10 @@ class Visualizer:
             "squat_up": ("squat_state_up", COLORS["GREEN"], "up"),
             "squat_down": ("squat_state_down", (0, 165, 255), "down"),
             
+            # PushUp States
+            "pushup_up": ("pushup_state_up", COLORS["GREEN"], "up"),
+            "pushup_down": ("pushup_state_down", (0, 165, 255), "down"),
+            
             "start": ("state_start", COLORS["WHITE"], "neutral"),
             "unknown": ("state_unknown", COLORS["GRAY"], "neutral")
         }

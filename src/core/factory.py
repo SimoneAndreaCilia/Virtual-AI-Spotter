@@ -2,7 +2,7 @@ from typing import Dict, Any
 from src.core.interfaces import Exercise
 from src.exercises.curl import BicepCurl
 from src.exercises.squat import Squat
-# from src.exercises.pushup import PushUp (da mettere in una implementazione futura)
+from src.exercises.pushup import PushUp
 
 class ExerciseFactory:
     @staticmethod
@@ -13,6 +13,7 @@ class ExerciseFactory:
             return BicepCurl(config)
         elif exercise_type == "squat":
             return Squat(config)
-        # elif exercise_type == "pushup": return PushUp(config)
+        elif exercise_type == "pushup":
+             return PushUp(config)
         
         raise ValueError(f"Esercizio '{exercise_type}' non supportato.")
