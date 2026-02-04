@@ -6,7 +6,6 @@ from typing import Optional
 from config.settings import LOGS_DIR, CAMERA_ID, MODEL_PATH, DEVICE
 from config.translation_strings import i18n
 from src.core.interfaces import VideoSource
-from src.core.factory import ExerciseFactory
 from src.core.session_manager import SessionManager
 from src.infrastructure.webcam import WebcamSource
 from src.infrastructure.ai_inference import PoseEstimator

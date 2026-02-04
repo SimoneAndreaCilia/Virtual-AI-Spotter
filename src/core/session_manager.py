@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from src.core.factory import ExerciseFactory
 from src.core.entities.session import Session
 from config.translation_strings import i18n
-# Note: Assuming config.translation_strings is where i18n is located based on main.py analysis.
+
 
 @dataclass
 class UIState:
@@ -19,19 +19,19 @@ class UIState:
     keypoints: Any = None
 
 class SessionManager:
-    def __init__(self, db_manager, user_id, exercise_name, exercise_config, target_sets, target_reps):
-        self.db_manager = db_manager
-        self.user_id = user_id
+    def __init__(self, db_manager: Any, user_id: int, exercise_name: str, exercise_config: Dict[str, Any], target_sets: int, target_reps: int):
+        self.db_manager: Any = db_manager
+        self.user_id: int = user_id
         
         # Config
-        self.exercise_name = exercise_name
-        self.exercise_config = exercise_config
-        self.target_sets = target_sets
-        self.target_reps = target_reps
+        self.exercise_name: str = exercise_name
+        self.exercise_config: Dict[str, Any] = exercise_config
+        self.target_sets: int = target_sets
+        self.target_reps: int = target_reps
         
         # State
-        self.current_set = 1
-        self.workout_state = "EXERCISE" # EXERCISE | REST | FINISHED
+        self.current_set: int = 1
+        self.workout_state: str = "EXERCISE" # EXERCISE | REST | FINISHED
         
         # Exercise Logic
         self.exercise_logic = ExerciseFactory.create_exercise(exercise_name, exercise_config)
@@ -44,7 +44,7 @@ class SessionManager:
         )
         logging.info(f"SessionManager created for {exercise_name}")
 
-    def update(self, pose_data, timestamp: float) -> UIState:
+    def update(self, pose_data: Any, timestamp: float) -> UIState:
         """
         Updates the session logic based on new pose data.
         Returns the state needed for the UI to render.
@@ -105,20 +105,20 @@ class SessionManager:
         # Reset exercise logic for next set (but keep config)
         self.exercise_logic.reset()
 
-    def handle_user_input(self, action: str):
+    def handle_user_input(self, action: str) -> None:
         if action == 'CONTINUE' and self.workout_state == "REST":
             self.current_set += 1
             self.workout_state = "EXERCISE"
             logging.info(f"Resuming workout. Starting set {self.current_set}")
 
-    def is_session_finished(self):
+    def is_session_finished(self) -> bool:
         return self.workout_state == "FINISHED"
 
-    def end_session(self):
+    def end_session(self) -> None:
         if not self.session_entity.end_time:
             self.session_entity.end_session()
             self.db_manager.save_session(self.session_entity)
     
-    def save_session(self):
+    def save_session(self) -> None:
         # Public method to force save (e.g. on app quit)
         self.end_session()
