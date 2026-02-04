@@ -302,6 +302,7 @@ class Visualizer:
         # Testo colorato
         cv2.putText(frame, text, (text_x, text_y), font, scale, color, thickness)
 
+
     def draw_angle_arc(self, frame, center, angle_val):
         """
         (Opzionale) Disegna l'arco dell'angolo sul giunto (es. gomito).
@@ -312,3 +313,47 @@ class Visualizer:
         # Visualizza il valore numerico vicino al giunto
         cv2.putText(frame, f"{int(angle_val)}", (int(center[0]) - 20, int(center[1]) - 20), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLORS["WHITE"], 2)
+
+    def draw_dashboard_from_state(self, frame, state):
+        """
+        Adapter method to draw dashboard using the UIState dataclass.
+        """
+        # Draw Skeleton first if keypoints exist
+        if state.keypoints is not None:
+             self.draw_skeleton(frame, state.keypoints)
+
+        self.draw_dashboard(
+            frame,
+            exercise_name=state.exercise_name,
+            reps=state.reps,
+            target_reps=state.target_reps,
+            current_set=state.current_set,
+            target_sets=state.target_sets,
+            state=state.state,
+            feedback_key=state.feedback_key
+        )
+        
+        # Overlays for REST/FINISHED
+        if state.workout_state == "REST":
+            self._draw_overlay_message(frame, i18n.get("ui_rest_title"), i18n.get("ui_rest_subtitle"))
+        elif state.workout_state == "FINISHED":
+            self._draw_overlay_message(frame, i18n.get("ui_finish_title"), i18n.get("ui_finish_subtitle"))
+            
+        return frame
+
+    def _draw_overlay_message(self, frame, title, subtitle):
+        h, w, _ = frame.shape
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (0, 0), (w, h), (0, 0, 0), -1)
+        cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
+        
+        font = cv2.FONT_HERSHEY_DUPLEX
+        t_size = cv2.getTextSize(title, font, 2.0, 3)[0]
+        t_x = (w - t_size[0]) // 2
+        t_y = (h // 2) - 20
+        cv2.putText(frame, title, (t_x, t_y), font, 2.0, (0, 255, 0), 3, cv2.LINE_AA)
+        
+        s_size = cv2.getTextSize(subtitle, font, 1.0, 2)[0]
+        s_x = (w - s_size[0]) // 2
+        s_y = (h // 2) + 40
+        cv2.putText(frame, subtitle, (s_x, s_y), font, 1.0, (255, 255, 255), 2, cv2.LINE_AA)
