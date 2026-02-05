@@ -46,51 +46,38 @@ class Squat(Exercise):
         Output: AnalysisResult
         """
         
-        # --- 1. Smoothing & Selezione Keypoint ---
+        # --- 1. Smoothing ---
         smoothed_landmarks = self.smooth_landmarks(landmarks, timestamp)
 
-        # Mappa keypoint YOLOv8 (COCO format)
-        idx_hip_l, idx_knee_l, idx_ankle_l = 11, 13, 15
-        idx_hip_r, idx_knee_r, idx_ankle_r = 12, 14, 16
+        # --- 2. Side Processing (using base class helpers) ---
+        # Keypoint indices: (Hip, Knee, Ankle) for each side
+        side_indices = {
+            "left": (11, 13, 15),   # L Hip, L Knee, L Ankle
+            "right": (12, 14, 16)   # R Hip, R Knee, R Ankle
+        }
         
-        # Determine target sides
-        sides_to_process = []
-        if self.side == "left" or self.side == "both":
-            sides_to_process.append("left")
-        if self.side == "right" or self.side == "both":
-            sides_to_process.append("right")
-            
+        sides_to_process = self._get_sides_to_process()
         valid_angles = []
-        
-        # --- Process Left ---
-        if "left" in sides_to_process:
-             # Usiamo confidence originale
-             if min(landmarks[idx_hip_l][2], landmarks[idx_knee_l][2], landmarks[idx_ankle_l][2]) >= CONFIDENCE_THRESHOLD:
-                # Usiamo smoothed coords
-                angle_l = calculate_angle(smoothed_landmarks[idx_hip_l][:2], 
-                                          smoothed_landmarks[idx_knee_l][:2], 
-                                          smoothed_landmarks[idx_ankle_l][:2])
-                valid_angles.append(angle_l)
 
-        # --- Process Right ---
-        if "right" in sides_to_process:
-             if min(landmarks[idx_hip_r][2], landmarks[idx_knee_r][2], landmarks[idx_ankle_r][2]) >= CONFIDENCE_THRESHOLD:
-                angle_r = calculate_angle(smoothed_landmarks[idx_hip_r][:2], 
-                                          smoothed_landmarks[idx_knee_r][:2], 
-                                          smoothed_landmarks[idx_ankle_r][:2])
-                valid_angles.append(angle_r)
+        for side in sides_to_process:
+            angle = self._calculate_side_angle(
+                landmarks, smoothed_landmarks,
+                side_indices[side], CONFIDENCE_THRESHOLD
+            )
+            if angle is not None:
+                valid_angles.append(angle)
 
-        # Se non abbiamo angoli validi (per i lati richiesti)
+        # Se non abbiamo angoli validi
         if len(valid_angles) < len(sides_to_process):
-             return AnalysisResult(
-                reps=self.reps, # Track internal refs
+            return AnalysisResult(
+                reps=self.reps,
                 stage="unknown",
                 correction="err_body_not_visible",
                 angle=0.0,
                 is_valid=False
             )
 
-        # --- 2. Calcolo Geometrico (Media) ---
+        # --- 3. Calcolo Geometrico (Media) ---
         angle = np.mean(valid_angles)
 
         # --- 3. Delegate to Subsystems ---

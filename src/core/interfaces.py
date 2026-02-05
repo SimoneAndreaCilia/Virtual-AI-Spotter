@@ -53,6 +53,50 @@ class Exercise(ABC):
                 
         return smoothed
 
+    def _get_sides_to_process(self) -> list:
+        """
+        Returns list of sides to analyze based on self.side config.
+        
+        Returns:
+            ["left"], ["right"], or ["left", "right"] for "both"
+        """
+        side = getattr(self, 'side', 'right')
+        if side == "both":
+            return ["left", "right"]
+        return [side]
+
+    def _calculate_side_angle(
+        self,
+        landmarks: np.ndarray,
+        smoothed: np.ndarray,
+        indices: tuple,
+        confidence_threshold: float
+    ) -> float:
+        """
+        Calculates angle for a set of 3 keypoints if confidence is sufficient.
+        
+        Args:
+            landmarks: Original landmarks with confidence values
+            smoothed: Smoothed landmarks for coordinates
+            indices: Tuple of (idx1, idx2, idx3) where idx2 is the vertex
+            confidence_threshold: Minimum confidence required
+            
+        Returns:
+            Calculated angle in degrees, or None if confidence too low
+        """
+        from src.utils.geometry import calculate_angle
+        
+        idx1, idx2, idx3 = indices
+        
+        # Check if all keypoints have sufficient confidence
+        if min(landmarks[idx1][2], landmarks[idx2][2], landmarks[idx3][2]) >= confidence_threshold:
+            return calculate_angle(
+                smoothed[idx1][:2],
+                smoothed[idx2][:2],
+                smoothed[idx3][:2]
+            )
+        return None
+
     def _is_stable_change(self, predicate, consistency_frames: int = 3) -> bool:
         """
         Verifica se una condizione (predicate) è stata vera per gli ultimi N frame.

@@ -55,40 +55,30 @@ class BicepCurl(Exercise):
         Output: AnalysisResult
         """
         
-        # --- 1. Smoothing & Selezione Keypoint ---
+        # --- 1. Smoothing ---
         smoothed_landmarks = self.smooth_landmarks(landmarks, timestamp)
 
-        idx_shoulder_l, idx_elbow_l, idx_wrist_l = 5, 7, 9
-        idx_shoulder_r, idx_elbow_r, idx_wrist_r = 6, 8, 10
+        # --- 2. Side Processing (using base class helpers) ---
+        # Keypoint indices: (Shoulder, Elbow, Wrist) for each side
+        side_indices = {
+            "left": (5, 7, 9),   # L Shoulder, L Elbow, L Wrist
+            "right": (6, 8, 10)  # R Shoulder, R Elbow, R Wrist
+        }
         
-        # Determine target sides
-        sides_to_process = []
-        if self.side == "left" or self.side == "both":
-            sides_to_process.append("left")
-        if self.side == "right" or self.side == "both":
-            sides_to_process.append("right")
-
+        sides_to_process = self._get_sides_to_process()
         valid_angles = []
 
-        # --- Process Left ---
-        if "left" in sides_to_process:
-             if min(landmarks[idx_shoulder_l][2], landmarks[idx_elbow_l][2], landmarks[idx_wrist_l][2]) >= CONFIDENCE_THRESHOLD:
-                angle_l = calculate_angle(smoothed_landmarks[idx_shoulder_l][:2], 
-                                          smoothed_landmarks[idx_elbow_l][:2], 
-                                          smoothed_landmarks[idx_wrist_l][:2])
-                valid_angles.append(angle_l)
-
-        # --- Process Right ---
-        if "right" in sides_to_process:
-             if min(landmarks[idx_shoulder_r][2], landmarks[idx_elbow_r][2], landmarks[idx_wrist_r][2]) >= CONFIDENCE_THRESHOLD:
-                angle_r = calculate_angle(smoothed_landmarks[idx_shoulder_r][:2], 
-                                          smoothed_landmarks[idx_elbow_r][:2], 
-                                          smoothed_landmarks[idx_wrist_r][:2])
-                valid_angles.append(angle_r)
+        for side in sides_to_process:
+            angle = self._calculate_side_angle(
+                landmarks, smoothed_landmarks, 
+                side_indices[side], CONFIDENCE_THRESHOLD
+            )
+            if angle is not None:
+                valid_angles.append(angle)
 
         # Se non abbiamo angoli validi
         if len(valid_angles) < len(sides_to_process):
-             return AnalysisResult(
+            return AnalysisResult(
                 reps=self.reps,
                 stage="unknown",
                 correction="err_body_not_visible",
@@ -96,7 +86,7 @@ class BicepCurl(Exercise):
                 is_valid=False
             )
 
-        # --- 2. Calcolo Geometrico (Media) ---
+        # --- 3. Calcolo Geometrico (Media) ---
         angle = np.mean(valid_angles)
 
         # --- 3. Delegate to Subsystems ---
