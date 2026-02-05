@@ -84,6 +84,17 @@ class DatabaseManager:
             )
         return None
 
+    def create_default_user(self) -> User:
+        """
+        Creates a default user if none exists.
+        
+        Returns:
+            User: The newly created default user.
+        """
+        user = User(username="Athlete")
+        self.save_user(user)
+        return user
+
     # --- SESSION OPERATIONS ---
 
     def save_session(self, session: Session):
