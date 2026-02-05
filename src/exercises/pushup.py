@@ -6,7 +6,7 @@ from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
 from src.core.fsm import RepetitionCounter
 from src.core.feedback import FeedbackSystem
-from config.settings import CONFIDENCE_THRESHOLD, HYSTERESIS_TOLERANCE
+from config.settings import CONFIDENCE_THRESHOLD, HYSTERESIS_TOLERANCE, PUSHUP_THRESHOLDS
 
 
 @register_exercise("pushup")
@@ -14,11 +14,6 @@ class PushUp(Exercise):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         
-        # [DRY] Validation: Ensure all thresholds are passed from central settings
-        required_keys = ["up_angle", "down_angle", "form_angle_min"]
-        if not all(k in config for k in required_keys):
-            raise ValueError(f"PushUp configuration error: Missing keys {required_keys}. Received: {list(config.keys())}")
-
         self.display_name_key = "pushup_name"
         
         # Side to analyze: 'left', 'right', or 'auto' (based on confidence/visibility)
@@ -42,17 +37,17 @@ class PushUp(Exercise):
             16: PointSmoother(min_cutoff=0.1, beta=0.05)  # R Ankle
         }
 
-        # --- NEW ARCHITECTURE: FSM & Feedback ---
+        # --- FSM & Feedback (with defaults from settings) ---
         self.fsm = RepetitionCounter(
-            up_threshold=config["up_angle"], 
-            down_threshold=config["down_angle"],
-            start_stage="pushup_up" # Start assuming extended arms usually
+            up_threshold=config.get("up_angle", PUSHUP_THRESHOLDS["UP_ANGLE"]), 
+            down_threshold=config.get("down_angle", PUSHUP_THRESHOLDS["DOWN_ANGLE"]),
+            start_stage="pushup_up"
         )
         
         self.feedback = FeedbackSystem()
         
         # Rule 1: Back Straightness (Priority 5 - Medium)
-        form_min = config["form_angle_min"]
+        form_min = config.get("form_angle_min", PUSHUP_THRESHOLDS["FORM_ANGLE_MIN"])
         self.feedback.add_rule(
             condition=lambda ctx: ctx.get("body_angle", 180) < form_min,
             message_key="pushup_warn_back",
