@@ -1,12 +1,15 @@
 import numpy as np
 from typing import Dict, Any, List, Optional
 from src.core.interfaces import Exercise, AnalysisResult
+from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
 from src.core.fsm import RepetitionCounter
 from src.core.feedback import FeedbackSystem
 from config.settings import CONFIDENCE_THRESHOLD, HYSTERESIS_TOLERANCE
 
+
+@register_exercise("pushup")
 class PushUp(Exercise):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
