@@ -1,30 +1,84 @@
+"""
+SpotterApp - Main Application Controller for Virtual AI Spotter.
+
+Implements Dependency Injection pattern:
+- Dependencies are injected via __init__
+- main.py acts as Composition Root (creates and wires dependencies)
+- Enables testing with mocks (CI/CD without hardware)
+"""
 import cv2
 import logging
 import time
-from typing import Optional
+from typing import Optional, Dict, Any
 
-from config.settings import LOGS_DIR, CAMERA_ID, MODEL_PATH, DEVICE
+from config.settings import LOGS_DIR
 from config.translation_strings import i18n
 from src.core.interfaces import VideoSource
+from src.core.protocols import PoseDetector, DatabaseManagerProtocol as DBManager
 from src.core.session_manager import SessionManager
-from src.infrastructure.webcam import WebcamSource
-from src.infrastructure.ai_inference import PoseEstimator
 from src.ui.visualizer import Visualizer
-from src.ui.cli import CLI
-from src.data.db_manager import DatabaseManager
+
 
 class SpotterApp:
-    def __init__(self):
-        self.config = {}
-        self.video_source: Optional[VideoSource] = None
-        self.pose_detector: Optional[PoseEstimator] = None
+    """
+    Main application controller.
+    
+    Follows Single Responsibility Principle:
+    - Does NOT construct dependencies (injected via __init__)
+    - Only handles game loop execution
+    
+    Usage:
+        # Production (in main.py)
+        app = SpotterApp(
+            video_source=WebcamSource(...),
+            pose_detector=PoseEstimator(...),
+            db_manager=DatabaseManager(),
+            config={"exercise_name": "squat", ...}
+        )
+        app.setup()
+        app.run()
+        
+        # Testing
+        app = SpotterApp(
+            video_source=MockVideoSource(),
+            pose_detector=MockPoseEstimator(),
+            db_manager=mock_db,
+            config=test_config
+        )
+    """
+    
+    def __init__(
+        self,
+        video_source: VideoSource,
+        pose_detector: PoseDetector,
+        db_manager: DBManager,
+        config: Dict[str, Any]
+    ):
+        """
+        Initialize SpotterApp with injected dependencies.
+        
+        Args:
+            video_source: VideoSource implementation (WebcamSource or MockVideoSource)
+            pose_detector: PoseDetector implementation (PoseEstimator or MockPoseEstimator)
+            db_manager: DatabaseManager implementation
+            config: Configuration dict from CLI (exercise_name, target_reps, etc.)
+        """
+        self.video_source = video_source
+        self.pose_detector = pose_detector
+        self.db_manager = db_manager
+        self.config = config
+        
+        # Internal state (initialized in setup())
         self.session_manager: Optional[SessionManager] = None
         self.visualizer: Optional[Visualizer] = None
-        self.db_manager: Optional[DatabaseManager] = None
         self.running = False
 
     def setup(self):
-        """Initializes all sub-components and loads configuration."""
+        """
+        Initializes internal components after dependencies are ready.
+        
+        Call this after __init__ and before run().
+        """
         # 1. Logger Setup
         logging.basicConfig(
             level=logging.INFO,
@@ -35,12 +89,10 @@ class SpotterApp:
             ]
         )
         
-        # 2. CLI UI for Initial Config
-        self.config = CLI.get_initial_config()
+        # 2. Language Setup
         i18n.set_language(self.config.get('language', 'EN'))
         
-        # 3. Database
-        self.db_manager = DatabaseManager()
+        # 3. User Setup
         user = self.db_manager.get_user() or self.db_manager.create_default_user()
         
         # 4. Session Manager
@@ -48,14 +100,12 @@ class SpotterApp:
             db_manager=self.db_manager,
             user_id=user.id,
             exercise_name=self.config['exercise_name'],
-            exercise_config=self.config['exercise_config'],
-            target_sets=self.config['target_sets'],
-            target_reps=self.config['target_reps']
+            exercise_config=self.config.get('exercise_config', {}),
+            target_sets=self.config.get('target_sets', 3),
+            target_reps=self.config.get('target_reps', 10)
         )
         
-        # 5. Infrastructure (Webcam & AI)
-        self.pose_detector = PoseEstimator(MODEL_PATH, DEVICE)
-        self.video_source = WebcamSource(source_index=CAMERA_ID)
+        # 5. Visualizer
         self.visualizer = Visualizer()
         
         logging.info("SpotterApp initialized successfully.")
