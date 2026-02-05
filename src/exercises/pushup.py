@@ -75,12 +75,8 @@ class PushUp(Exercise):
         idx_shoulder_r, idx_elbow_r, idx_wrist_r = 6, 8, 10
         idx_hip_r, idx_ankle_r = 12, 16
         
-        # Determine target sides
-        sides_to_process = []
-        if self.side == "left" or self.side == "both":
-            sides_to_process.append("left")
-        if self.side == "right" or self.side == "both":
-            sides_to_process.append("right")
+        # Determine target sides (using base class helper)
+        sides_to_process = self._get_sides_to_process()
             
         # Data holders per side
         data_left = None  # Will hold (angle_reps, angle_form, confidence)
