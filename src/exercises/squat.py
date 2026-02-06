@@ -33,7 +33,8 @@ class Squat(Exercise):
         self.fsm = RepetitionCounter(
             up_threshold=config.get("up_angle", SQUAT_THRESHOLDS["UP_ANGLE"]),
             down_threshold=config.get("down_angle", SQUAT_THRESHOLDS["DOWN_ANGLE"]),
-            start_stage="squat_up"
+            start_stage="up",
+            state_prefix="squat"
         )
         self.feedback = FeedbackSystem()
         
@@ -82,16 +83,8 @@ class Squat(Exercise):
 
         # --- 3. Delegate to Subsystems ---
         
-        # A. FSM Rep Counting
-        self.reps, stage_raw = self.fsm.process(angle)
-        
-        # Map FSM generic states to Squat specific
-        if stage_raw == "up":
-            self.stage = "squat_up"
-        elif stage_raw == "down":
-            self.stage = "squat_down"
-        else:
-            self.stage = stage_raw
+        # A. FSM Rep Counting (returns prefixed state directly)
+        self.reps, self.stage = self.fsm.process(angle)
 
         # B. Feedback System
         feedback_ctx = {"angle": angle, "stage": self.stage}

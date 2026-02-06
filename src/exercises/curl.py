@@ -37,7 +37,8 @@ class BicepCurl(Exercise):
             up_threshold=config.get("up_angle", CURL_THRESHOLDS["UP_ANGLE"]),
             down_threshold=config.get("down_angle", CURL_THRESHOLDS["DOWN_ANGLE"]),
             start_stage="down", # Start extended
-            inverted=True 
+            inverted=True,
+            state_prefix="curl"
         )
         self.feedback = FeedbackSystem()
         
