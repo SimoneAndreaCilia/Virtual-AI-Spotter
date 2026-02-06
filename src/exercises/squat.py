@@ -15,6 +15,7 @@ class Squat(Exercise):
         super().__init__(config)
         
         self.display_name_key = "squat_name"
+        self.exercise_id = "Squat"  # Canonical name for database
         
         # Lato del corpo da analizzare: 'right' (default) o 'left'
         self.side = config.get("side", "right")

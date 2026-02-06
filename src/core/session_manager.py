@@ -74,7 +74,7 @@ class SessionManager:
         
         # Save set data
         self.session_entity.add_exercise({
-            "name": self.exercise_logic.display_name_key,
+            "name": self.exercise_logic.exercise_id,  # Canonical name for DB
             "set_index": self.current_set,
             "reps": self.exercise_logic.reps,
             "config": self.exercise_logic.config

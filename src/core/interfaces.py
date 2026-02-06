@@ -50,6 +50,8 @@ class Exercise(ABC):
         
         # [NEW] Chiave per localizzazione nome esercizio (OCP)
         self.display_name_key: str = ""
+        # [NEW] Canonical exercise name for database storage
+        self.exercise_id: str = ""
 
     def smooth_landmarks(self, landmarks: np.ndarray, timestamp: float = None) -> np.ndarray:
         """

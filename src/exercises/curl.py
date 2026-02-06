@@ -14,6 +14,7 @@ class BicepCurl(Exercise):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self.display_name_key = "curl_name"
+        self.exercise_id = "Bicep Curl"  # Canonical name for database
         
         # Lato del corpo da analizzare: 'right' o 'left'
         self.side = config.get("side", "right")

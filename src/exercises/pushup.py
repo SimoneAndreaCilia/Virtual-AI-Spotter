@@ -15,6 +15,7 @@ class PushUp(Exercise):
         super().__init__(config)
         
         self.display_name_key = "pushup_name"
+        self.exercise_id = "PushUp"  # Canonical name for database
         
         # Side to analyze: 'left', 'right', or 'auto' (based on confidence/visibility)
         # Defaulting to 'left' as usually one side is presented to camera
