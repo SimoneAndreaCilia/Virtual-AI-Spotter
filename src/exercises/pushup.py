@@ -171,14 +171,15 @@ class PushUp(Exercise):
         if correction_feedback == "feedback_perfect":
             correction_feedback = "pushup_perfect_form"
 
-        # --- History Update ---
-        self.history.append({
-            "angle": current_angle,
-            "body_angle": current_body_angle,
-            "stage": self.stage,
-            "reps": self.reps,
-            "is_valid": is_valid
-        })
+        # --- History Update (using NamedTuple for memory efficiency) ---
+        from src.core.interfaces import PushUpHistoryEntry
+        self.history.append(PushUpHistoryEntry(
+            angle=current_angle,
+            body_angle=current_body_angle,
+            stage=self.stage,
+            reps=self.reps,
+            is_valid=is_valid
+        ))
 
         return AnalysisResult(
             reps=self.reps,

@@ -1,4 +1,5 @@
 from typing import List, Tuple, Callable, Any, Dict
+import bisect
 
 class FeedbackSystem:
     """
@@ -8,6 +9,7 @@ class FeedbackSystem:
     def __init__(self):
         # Lista di tuple: (priority, condition_func, message_key)
         # Priority più alta vince (es. 10 > 1)
+        # Stored in ascending order, iterated in reverse for highest-first
         self.rules: List[Tuple[int, Callable[[Dict[str, Any]], bool], str]] = []
 
     def add_rule(self, 
@@ -22,9 +24,9 @@ class FeedbackSystem:
             message_key: Chiave del messaggio da mostrare se la condizione è vera.
             priority: Importanza dell'errore (10=critico, 1=info).
         """
-        self.rules.append((priority, condition, message_key))
-        # Ordina per priorità decrescente
-        self.rules.sort(key=lambda x: x[0], reverse=True)
+        # Use bisect.insort for O(n) insertion instead of O(n log n) sort
+        # Note: bisect sorts ascending, so we iterate in reverse in check()
+        bisect.insort(self.rules, (priority, condition, message_key))
 
     def check(self, context: Dict[str, Any]) -> Tuple[str, bool]:
         """
@@ -34,7 +36,8 @@ class FeedbackSystem:
             Tuple[str, bool]: (message_key, is_valid_form)
             is_valid_form è False se almeno una regola con priorità > 0 scatta.
         """
-        for priority, condition, msg_key in self.rules:
+        # Iterate in reverse to check highest priority rules first
+        for priority, condition, msg_key in reversed(self.rules):
             if condition(context):
                 # Se la condizione è vera (c'è un problema/stato da segnalare)
                 # Ritorniamo subito il messaggio a più alta priorità

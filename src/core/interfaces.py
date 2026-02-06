@@ -1,8 +1,25 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, NamedTuple
 from collections import deque
 import numpy as np
+from src.utils.geometry import calculate_angle
+
+
+# Memory-efficient history entry (replaces per-frame dict allocation)
+class HistoryEntry(NamedTuple):
+    angle: float
+    stage: str
+    reps: int
+    is_valid: bool
+
+# Extended entry for PushUp (includes body_angle)
+class PushUpHistoryEntry(NamedTuple):
+    angle: float
+    body_angle: float
+    stage: str
+    reps: int
+    is_valid: bool
 
 # Definizione del contratto per i risultati dell'analisi
 @dataclass
@@ -42,14 +59,14 @@ class Exercise(ABC):
         smoothed = landmarks.copy()
         
         for idx, smoother in self.smoothers.items():
-            # Assicuriamoci che l'indice esista nei dati passati
-            if idx < len(landmarks):
+            try:
                 raw_pt = (landmarks[idx][0], landmarks[idx][1])
-                # Passiamo il timestamp esplicito se disponibile
                 smooth_pt = smoother(raw_pt, t=timestamp)
-                
                 smoothed[idx][0] = smooth_pt[0]
                 smoothed[idx][1] = smooth_pt[1]
+            except IndexError:
+                # Smoother index out of range - skip this keypoint
+                continue
                 
         return smoothed
 
@@ -84,8 +101,6 @@ class Exercise(ABC):
         Returns:
             Calculated angle in degrees, or None if confidence too low
         """
-        from src.utils.geometry import calculate_angle
-        
         idx1, idx2, idx3 = indices
         
         # Check if all keypoints have sufficient confidence
