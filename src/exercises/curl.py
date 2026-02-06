@@ -103,13 +103,14 @@ class BicepCurl(Exercise):
         if correction_feedback == "feedback_perfect":
              correction_feedback = "curl_perfect_form"
 
-        # [NEW] Aggiornamento Storia
-        self.history.append({
-            "angle": angle,
-            "stage": self.stage,
-            "reps": self.reps,
-            "is_valid": is_valid
-        })
+        # [NEW] Aggiornamento Storia (using NamedTuple for memory efficiency)
+        from src.core.interfaces import HistoryEntry
+        self.history.append(HistoryEntry(
+            angle=angle,
+            stage=self.stage,
+            reps=self.reps,
+            is_valid=is_valid
+        ))
 
         return AnalysisResult(
             reps=self.reps,

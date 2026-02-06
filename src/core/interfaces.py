@@ -1,8 +1,24 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, NamedTuple
 from collections import deque
 import numpy as np
+
+
+# Memory-efficient history entry (replaces per-frame dict allocation)
+class HistoryEntry(NamedTuple):
+    angle: float
+    stage: str
+    reps: int
+    is_valid: bool
+
+# Extended entry for PushUp (includes body_angle)
+class PushUpHistoryEntry(NamedTuple):
+    angle: float
+    body_angle: float
+    stage: str
+    reps: int
+    is_valid: bool
 
 # Definizione del contratto per i risultati dell'analisi
 @dataclass
