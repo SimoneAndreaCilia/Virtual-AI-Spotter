@@ -8,16 +8,16 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.infrastructure.webcam import WebcamSource
 
 def main():
-    print("Avvio test webcam...")
+    print("Starting the webcam test...")
     try:
         # Instantiate Infrastructure class
         cam = WebcamSource(source_index=0)
-        print("Webcam inizializzata con successo via Infrastructure Layer.")
+        print("Webcam initialized successfully via Infrastructure Layer.")
         
         while True:
             ret, frame = cam.get_frame()
             if not ret:
-                print("Errore lettura frame")
+                print("Error reading frame")
                 break
                 
             cv2.imshow('Test Infrastructure', frame)
@@ -28,10 +28,10 @@ def main():
                 
         cam.release()
         cv2.destroyAllWindows()
-        print("Test completato.")
+        print("Test completed successfully.")
         
     except Exception as e:
-        print(f"ERRORE CRITICO: {e}")
+        print(f"CRITICAL ERROR: {e}")
 
 if __name__ == "__main__":
     main()
