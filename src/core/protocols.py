@@ -54,3 +54,28 @@ class DatabaseManagerProtocol(Protocol):
     def save_session(self, session: Any) -> None:
         """Saves a training session to the database."""
         ...
+
+
+@runtime_checkable
+class KeypointExtractor(Protocol):
+    """
+    Protocol for extracting standardized keypoints from pose detection results.
+    
+    Implementations:
+    - YoloKeypointExtractor (for YOLO models)
+    - Future: MediaPipeKeypointExtractor, etc.
+    """
+    
+    def extract(self, pose_data: Any) -> Tuple[bool, Optional[np.ndarray]]:
+        """
+        Extracts keypoints from raw pose detection results.
+        
+        Args:
+            pose_data: Raw output from pose detector
+            
+        Returns:
+            Tuple of (has_person, keypoints):
+            - has_person: True if a person was detected
+            - keypoints: 17x3 numpy array (x, y, confidence) or None
+        """
+        ...
