@@ -2,6 +2,7 @@ import logging
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 from src.core.interfaces import Exercise
+from src.core.protocols import KeypointExtractor
 from src.core.entities.session import Session
 from config.translation_strings import i18n
 
@@ -19,7 +20,8 @@ class UIState:
     keypoints: Any = None
 
 class SessionManager:
-    def __init__(self, db_manager: Any, user_id: int, exercise: Exercise, target_sets: int, target_reps: int):
+    def __init__(self, db_manager: Any, user_id: int, exercise: Exercise, 
+                 keypoint_extractor: KeypointExtractor, target_sets: int, target_reps: int):
         self.db_manager: Any = db_manager
         self.user_id: int = user_id
         
@@ -31,8 +33,9 @@ class SessionManager:
         self.current_set: int = 1
         self.workout_state: str = "EXERCISE" # EXERCISE | REST | FINISHED
         
-        # Exercise Logic (injected, not created)
+        # Injected dependencies
         self.exercise_logic = exercise
+        self.keypoint_extractor = keypoint_extractor
         
         # Session Entity
         self.session_entity = Session(
@@ -53,12 +56,8 @@ class SessionManager:
         stage = self.exercise_logic.stage
         keypoints = None
 
-        # Extract keypoints availability
-        has_people = False
-        if pose_data and hasattr(pose_data[0], 'keypoints') and pose_data[0].keypoints is not None:
-             if pose_data[0].keypoints.data.shape[0] > 0:
-                 has_people = True
-                 keypoints = pose_data[0].keypoints.data[0].cpu().numpy()
+        # Extract keypoints using injected extractor (decoupled from YOLO format)
+        has_people, keypoints = self.keypoint_extractor.extract(pose_data)
 
         # Update Logic only if we are in EXERCISE mode and have a person
         if self.workout_state == "EXERCISE" and has_people:

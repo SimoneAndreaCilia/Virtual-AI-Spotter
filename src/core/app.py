@@ -17,6 +17,7 @@ from src.core.interfaces import VideoSource
 from src.core.protocols import PoseDetector, DatabaseManagerProtocol as DBManager
 from src.core.session_manager import SessionManager
 from src.core.factory import ExerciseFactory
+from src.infrastructure.keypoint_extractor import YoloKeypointExtractor
 from src.ui.visualizer import Visualizer
 
 
@@ -102,11 +103,15 @@ class SpotterApp:
             self.config.get('exercise_config', {})
         )
         
-        # 4b. Session Manager (receives injected exercise)
+        # 4b. Create Keypoint Extractor (YOLO-specific)
+        keypoint_extractor = YoloKeypointExtractor()
+        
+        # 4c. Session Manager (receives injected dependencies)
         self.session_manager = SessionManager(
             db_manager=self.db_manager,
             user_id=user.id,
             exercise=exercise,
+            keypoint_extractor=keypoint_extractor,
             target_sets=self.config.get('target_sets', 3),
             target_reps=self.config.get('target_reps', 10)
         )
