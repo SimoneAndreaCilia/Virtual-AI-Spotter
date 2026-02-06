@@ -16,6 +16,7 @@ from config.translation_strings import i18n
 from src.core.interfaces import VideoSource
 from src.core.protocols import PoseDetector, DatabaseManagerProtocol as DBManager
 from src.core.session_manager import SessionManager
+from src.core.factory import ExerciseFactory
 from src.ui.visualizer import Visualizer
 
 
@@ -95,12 +96,17 @@ class SpotterApp:
         # 3. User Setup
         user = self.db_manager.get_user() or self.db_manager.create_default_user()
         
-        # 4. Session Manager
+        # 4a. Create Exercise (Composition Root responsibility)
+        exercise = ExerciseFactory.create_exercise(
+            self.config['exercise_name'],
+            self.config.get('exercise_config', {})
+        )
+        
+        # 4b. Session Manager (receives injected exercise)
         self.session_manager = SessionManager(
             db_manager=self.db_manager,
             user_id=user.id,
-            exercise_name=self.config['exercise_name'],
-            exercise_config=self.config.get('exercise_config', {}),
+            exercise=exercise,
             target_sets=self.config.get('target_sets', 3),
             target_reps=self.config.get('target_reps', 10)
         )
