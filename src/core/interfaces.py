@@ -42,14 +42,14 @@ class Exercise(ABC):
         smoothed = landmarks.copy()
         
         for idx, smoother in self.smoothers.items():
-            # Assicuriamoci che l'indice esista nei dati passati
-            if idx < len(landmarks):
+            try:
                 raw_pt = (landmarks[idx][0], landmarks[idx][1])
-                # Passiamo il timestamp esplicito se disponibile
                 smooth_pt = smoother(raw_pt, t=timestamp)
-                
                 smoothed[idx][0] = smooth_pt[0]
                 smoothed[idx][1] = smooth_pt[1]
+            except IndexError:
+                # Smoother index out of range - skip this keypoint
+                continue
                 
         return smoothed
 
