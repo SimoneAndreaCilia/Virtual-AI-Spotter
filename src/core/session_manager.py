@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
-from src.core.factory import ExerciseFactory
+from src.core.interfaces import Exercise
 from src.core.entities.session import Session
 from config.translation_strings import i18n
 
@@ -19,13 +19,11 @@ class UIState:
     keypoints: Any = None
 
 class SessionManager:
-    def __init__(self, db_manager: Any, user_id: int, exercise_name: str, exercise_config: Dict[str, Any], target_sets: int, target_reps: int):
+    def __init__(self, db_manager: Any, user_id: int, exercise: Exercise, target_sets: int, target_reps: int):
         self.db_manager: Any = db_manager
         self.user_id: int = user_id
         
         # Config
-        self.exercise_name: str = exercise_name
-        self.exercise_config: Dict[str, Any] = exercise_config
         self.target_sets: int = target_sets
         self.target_reps: int = target_reps
         
@@ -33,8 +31,8 @@ class SessionManager:
         self.current_set: int = 1
         self.workout_state: str = "EXERCISE" # EXERCISE | REST | FINISHED
         
-        # Exercise Logic
-        self.exercise_logic = ExerciseFactory.create_exercise(exercise_name, exercise_config)
+        # Exercise Logic (injected, not created)
+        self.exercise_logic = exercise
         
         # Session Entity
         self.session_entity = Session(
@@ -42,7 +40,7 @@ class SessionManager:
             target_sets=target_sets,
             target_reps=target_reps
         )
-        logging.info(f"SessionManager created for {exercise_name}")
+        logging.info(f"SessionManager created for {exercise.display_name_key}")
 
     def update(self, pose_data: Any, timestamp: float) -> UIState:
         """
@@ -90,10 +88,10 @@ class SessionManager:
         
         # Save set data
         self.session_entity.add_exercise({
-            "name": self.exercise_name,
+            "name": self.exercise_logic.display_name_key,
             "set_index": self.current_set,
             "reps": self.exercise_logic.reps,
-            "config": self.exercise_config
+            "config": self.exercise_logic.config
         })
         
         if self.current_set >= self.target_sets:
