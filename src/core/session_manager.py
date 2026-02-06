@@ -70,7 +70,7 @@ class SessionManager:
             keypoints=keypoints
         )
 
-    def _complete_set(self):
+    def _complete_set(self) -> None:
         logging.info(f"Set {self.current_set} completed.")
         
         # Save set data

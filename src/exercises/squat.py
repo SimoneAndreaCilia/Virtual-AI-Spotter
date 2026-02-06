@@ -6,7 +6,7 @@ from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
 from src.core.fsm import RepetitionCounter
 from src.core.feedback import FeedbackSystem
-from config.settings import SQUAT_THRESHOLDS, CONFIDENCE_THRESHOLD, HYSTERESIS_TOLERANCE
+from config.settings import SQUAT_THRESHOLDS, CONFIDENCE_THRESHOLD
 
 
 @register_exercise("squat")

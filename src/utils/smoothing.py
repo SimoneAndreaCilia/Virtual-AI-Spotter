@@ -1,8 +1,10 @@
 import math
 import time
 
+from typing import Tuple, Optional
+
 class OneEuroFilter:
-    def __init__(self, min_cutoff=1.0, beta=0.0, d_cutoff=1.0):
+    def __init__(self, min_cutoff: float = 1.0, beta: float = 0.0, d_cutoff: float = 1.0) -> None:
         """
         One Euro Filter implementation for smoothing noisy signals.
         
@@ -19,7 +21,7 @@ class OneEuroFilter:
         self.dx_prev = None
         self.t_prev = None
 
-    def __call__(self, x, t=None):
+    def __call__(self, x: float, t: Optional[float] = None) -> float:
         if t is None:
             t = time.time()
             
@@ -54,30 +56,30 @@ class OneEuroFilter:
         
         return x_hat
 
-    def smoothing_factor(self, dt, cutoff):
+    def smoothing_factor(self, dt: float, cutoff: float) -> float:
         r = 2 * math.pi * cutoff * dt
         return r / (r + 1)
 
-    def exponential_smoothing(self, a, x, x_prev):
+    def exponential_smoothing(self, a: float, x: float, x_prev: float) -> float:
         return a * x + (1 - a) * x_prev
     
-    def reset(self):
+    def reset(self) -> None:
         self.x_prev = None
         self.dx_prev = None
         self.t_prev = None
 
 class PointSmoother:
     """Helper to smooth 2D points (x, y)."""
-    def __init__(self, min_cutoff=1.0, beta=0.0, d_cutoff=1.0):
+    def __init__(self, min_cutoff: float = 1.0, beta: float = 0.0, d_cutoff: float = 1.0) -> None:
         self.filter_x = OneEuroFilter(min_cutoff, beta, d_cutoff)
         self.filter_y = OneEuroFilter(min_cutoff, beta, d_cutoff)
         
-    def __call__(self, point, t=None):
+    def __call__(self, point: Tuple[float, float], t: Optional[float] = None) -> Tuple[float, float]:
         x, y = point
         sx = self.filter_x(x, t)
         sy = self.filter_y(y, t)
         return (sx, sy)
         
-    def reset(self):
+    def reset(self) -> None:
         self.filter_x.reset()
         self.filter_y.reset()

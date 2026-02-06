@@ -19,7 +19,7 @@ class DatabaseManager:
         conn.row_factory = sqlite3.Row
         return conn
 
-    def _init_db(self):
+    def _init_db(self) -> None:
         """Initialize database by creating tables if they don't exist."""
         if not os.path.exists(self.schema_path):
              # Fallback if schema not found at expected location (e.g., tests)
@@ -34,7 +34,7 @@ class DatabaseManager:
 
     # --- USER OPERATIONS ---
     
-    def save_user(self, user: User):
+    def save_user(self, user: User) -> None:
         conn = self._get_connection()
         try:
             conn.execute(
@@ -97,7 +97,7 @@ class DatabaseManager:
 
     # --- SESSION OPERATIONS ---
 
-    def save_session(self, session: Session):
+    def save_session(self, session: Session) -> None:
         """Save the session and all its exercises."""
         conn = self._get_connection()
         try:
