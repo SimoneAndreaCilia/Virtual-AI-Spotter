@@ -7,15 +7,22 @@ class RepetitionCounter:
     Gestisce la logica della macchina a stati per contare le ripetizioni.
     Incorpora il debouncing per evitare falsi conteggi dovuti al jitter.
     """
-    def __init__(self, up_threshold: float, down_threshold: float, start_stage: str = "start", inverted: bool = False):
+    def __init__(self, up_threshold: float, down_threshold: float, start_stage: str = "start", inverted: bool = False, state_prefix: str = ""):
         self.up_threshold = up_threshold
         self.down_threshold = down_threshold
-        self.state = start_stage
+        self.state_prefix = state_prefix
+        self.state = self._prefixed(start_stage)
         self.reps = 0
         self.inverted = inverted # Se True: Up è angolo PICCOLO, Down è angolo GRANDE
         
         # Buffer locale per la stabilità del segnale (es. ultimi 5 angoli)
-        self.history = deque(maxlen=5) 
+        self.history = deque(maxlen=5)
+    
+    def _prefixed(self, state: str) -> str:
+        """Returns prefixed state name, e.g., 'squat_up' from 'up'."""
+        if self.state_prefix and state not in ("start", "unknown"):
+            return f"{self.state_prefix}_{state}"
+        return state 
 
     def process(self, angle: float) -> Tuple[int, str]:
         """
@@ -31,16 +38,16 @@ class RepetitionCounter:
             # DOWN TRANSITION
             if angle < self.down_threshold + HYSTERESIS_TOLERANCE:
                 if self._is_stable(lambda a: a < self.down_threshold + HYSTERESIS_TOLERANCE):
-                    self.state = "down"
+                    self.state = self._prefixed("down")
                     
             # UP TRANSITION & COUNT
             elif angle > self.up_threshold - HYSTERESIS_TOLERANCE:
                 if self._is_stable(lambda a: a > self.up_threshold - HYSTERESIS_TOLERANCE):
-                    if self.state == "down":
+                    if self.state.endswith("down"):
                         self.reps += 1
-                        self.state = "up"
+                        self.state = self._prefixed("up")
                     elif self.state == "start":
-                        self.state = "up"
+                        self.state = self._prefixed("up")
         
         else:
             # --- INVERTED LOGIC (Bicep Curl) ---
@@ -50,17 +57,17 @@ class RepetitionCounter:
             # DOWN TRANSITION
             if angle > self.down_threshold - HYSTERESIS_TOLERANCE:
                 if self._is_stable(lambda a: a > self.down_threshold - HYSTERESIS_TOLERANCE):
-                    self.state = "down"
+                    self.state = self._prefixed("down")
             
             # UP TRANSITION & COUNT
             elif angle < self.up_threshold + HYSTERESIS_TOLERANCE:
                 if self._is_stable(lambda a: a < self.up_threshold + HYSTERESIS_TOLERANCE):
-                    if self.state == "down":
+                    if self.state.endswith("down"):
                         self.reps += 1
-                        self.state = "up"
+                        self.state = self._prefixed("up")
                     elif self.state == "start":
                         # Se partiamo già piegati? Mmh, di solito si parte distesi (down)
-                        self.state = "up"
+                        self.state = self._prefixed("up")
             
         return self.reps, self.state
 

@@ -91,5 +91,52 @@ class TestRepetitionCounter(unittest.TestCase):
         reps, state = self.fsm.process(170) 
         self.assertEqual(state, "up")
 
+    def test_state_prefix(self):
+        """Test that state_prefix correctly prefixes state names."""
+        fsm = RepetitionCounter(up_threshold=160, down_threshold=90, start_stage="up", state_prefix="squat")
+        
+        # Start should prefixed as squat_up
+        fsm.process(170)
+        reps, state = fsm.process(170)
+        self.assertEqual(state, "squat_up")
+        
+        # Go down - state should be squat_down
+        fsm.process(80)
+        reps, state = fsm.process(80)
+        self.assertEqual(state, "squat_down")
+        
+        # Go back up - state should be squat_up, rep counted
+        fsm.process(170)
+        reps, state = fsm.process(170)
+        self.assertEqual(state, "squat_up")
+        self.assertEqual(reps, 1)
+
+    def test_state_prefix_inverted(self):
+        """Test state_prefix works with inverted logic (curl)."""
+        fsm = RepetitionCounter(up_threshold=30, down_threshold=160, start_stage="down", inverted=True, state_prefix="curl")
+        
+        # Start extended - should be curl_down
+        fsm.process(170)
+        reps, state = fsm.process(170)
+        self.assertEqual(state, "curl_down")
+        
+        # Flex up - should be curl_up
+        fsm.process(20)
+        reps, state = fsm.process(20)
+        self.assertEqual(state, "curl_up")
+        self.assertEqual(reps, 1)
+
+    def test_no_prefix_backward_compatible(self):
+        """Test that FSM without prefix still returns generic states."""
+        fsm = RepetitionCounter(up_threshold=160, down_threshold=90, start_stage="up")
+        
+        fsm.process(170)
+        reps, state = fsm.process(170)
+        self.assertEqual(state, "up")  # No prefix
+        
+        fsm.process(80)
+        reps, state = fsm.process(80)
+        self.assertEqual(state, "down")  # No prefix
+
 if __name__ == '__main__':
     unittest.main()

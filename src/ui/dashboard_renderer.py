@@ -97,8 +97,8 @@ class DashboardRenderer:
 
         # State mapping
         state_key_map = {
-            "up": ("curl_state_up", COLORS["GREEN"], "up"),
-            "down": ("curl_state_down", (0, 165, 255), "down"),
+            "curl_up": ("curl_state_up", COLORS["GREEN"], "up"),
+            "curl_down": ("curl_state_down", (0, 165, 255), "down"),
             "squat_up": ("squat_state_up", COLORS["GREEN"], "up"),
             "squat_down": ("squat_state_down", (0, 165, 255), "down"),
             "pushup_up": ("pushup_state_up", COLORS["GREEN"], "up"),

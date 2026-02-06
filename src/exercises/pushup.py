@@ -41,7 +41,8 @@ class PushUp(Exercise):
         self.fsm = RepetitionCounter(
             up_threshold=config.get("up_angle", PUSHUP_THRESHOLDS["UP_ANGLE"]), 
             down_threshold=config.get("down_angle", PUSHUP_THRESHOLDS["DOWN_ANGLE"]),
-            start_stage="pushup_up"
+            start_stage="up",
+            state_prefix="pushup"
         )
         
         self.feedback = FeedbackSystem()
@@ -155,16 +156,8 @@ class PushUp(Exercise):
 
         # --- 3. Delegate to Subsystems ---
         
-        # A. Status & Counting (FSM)
-        self.reps, stage_raw = self.fsm.process(current_angle)
-        
-        # Map generic FSM state to specific PushUp state
-        if stage_raw == "up":
-            self.stage = "pushup_up"
-        elif stage_raw == "down":
-            self.stage = "pushup_down"
-        else:
-            self.stage = stage_raw
+        # A. Status & Counting (FSM returns prefixed state directly)
+        self.reps, self.stage = self.fsm.process(current_angle)
 
         # B. Feedback Check
         feedback_ctx = {
