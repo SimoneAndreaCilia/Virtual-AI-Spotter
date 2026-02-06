@@ -4,6 +4,7 @@ from src.core.interfaces import Exercise
 from src.core.protocols import KeypointExtractor
 from src.core.entities.session import Session
 from src.core.entities.ui_state import UIState
+from src.core.entities.workout_state import WorkoutState
 from config.translation_strings import i18n
 
 class SessionManager:
@@ -18,7 +19,7 @@ class SessionManager:
         
         # State
         self.current_set: int = 1
-        self.workout_state: str = "EXERCISE" # EXERCISE | REST | FINISHED
+        self.workout_state = WorkoutState.EXERCISE
         
         # Injected dependencies
         self.exercise_logic = exercise
@@ -47,7 +48,7 @@ class SessionManager:
         has_people, keypoints = self.keypoint_extractor.extract(pose_data)
 
         # Update Logic only if we are in EXERCISE mode and have a person
-        if self.workout_state == "EXERCISE" and has_people:
+        if self.workout_state == WorkoutState.EXERCISE and has_people:
             analysis = self.exercise_logic.process_frame(keypoints, timestamp)
             current_reps = analysis.reps
             feedback = analysis.correction
@@ -65,7 +66,7 @@ class SessionManager:
             target_sets=self.target_sets,
             state=stage,
             feedback_key=feedback,
-            workout_state=self.workout_state,
+            workout_state=self.workout_state.value,
             keypoints=keypoints
         )
 
@@ -81,22 +82,22 @@ class SessionManager:
         })
         
         if self.current_set >= self.target_sets:
-            self.workout_state = "FINISHED"
+            self.workout_state = WorkoutState.FINISHED
             self.end_session()
         else:
-            self.workout_state = "REST"
+            self.workout_state = WorkoutState.REST
         
         # Reset exercise logic for next set (but keep config)
         self.exercise_logic.reset()
 
     def handle_user_input(self, action: str) -> None:
-        if action == 'CONTINUE' and self.workout_state == "REST":
+        if action == 'CONTINUE' and self.workout_state == WorkoutState.REST:
             self.current_set += 1
-            self.workout_state = "EXERCISE"
+            self.workout_state = WorkoutState.EXERCISE
             logging.info(f"Resuming workout. Starting set {self.current_set}")
 
     def is_session_finished(self) -> bool:
-        return self.workout_state == "FINISHED"
+        return self.workout_state == WorkoutState.FINISHED
 
     def end_session(self) -> None:
         if not self.session_entity.end_time:
