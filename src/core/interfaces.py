@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, Any, Tuple, NamedTuple
 from collections import deque
 import numpy as np
+from src.utils.geometry import calculate_angle
 
 
 # Memory-efficient history entry (replaces per-frame dict allocation)
@@ -100,8 +101,6 @@ class Exercise(ABC):
         Returns:
             Calculated angle in degrees, or None if confidence too low
         """
-        from src.utils.geometry import calculate_angle
-        
         idx1, idx2, idx3 = indices
         
         # Check if all keypoints have sufficient confidence
