@@ -50,6 +50,15 @@ PUSHUP_THRESHOLDS = {
 BUFFER_SIZE = 10           # Number of frames for moving average (reduces jitter)
 HYSTERESIS_TOLERANCE = 5   # Tolerance (degrees) for state change debouncing (e.g., +5/-5)
 
+# --- 4b. PERFORMANCE SETTINGS ---
+SHOW_FPS = True            # Display FPS counter in HUD
+FRAME_SKIP = 0             # Skip N frames between AI inference (0 = process every frame)
+
+# --- 4c. GESTURE RECOGNITION ---
+GESTURE_ENABLED = True     # Enable hands-free gesture control
+GESTURE_STABILITY = 10     # Frames gesture must be held to trigger action
+GESTURE_CONFIDENCE = 0.6   # Minimum keypoint confidence for gesture detection
+
 # --- 5. VISUALIZATION (UI) ---
 # Colors in BGR format (Blue, Green, Red) for OpenCV
 COLORS = {
