@@ -15,11 +15,12 @@ class Squat(Exercise):
         super().__init__(config)
         
         self.display_name_key = "squat_name"
+        self.exercise_id = "Squat"  # Canonical name for database
         
-        # Lato del corpo da analizzare: 'right' (default) o 'left'
+        # Body side to analyze: 'right' (default) or 'left'
         self.side = config.get("side", "right")
 
-        # [NEW] Smoother per i keypoint critici (Anche, Ginocchia, Caviglie)
+        # Smoother for critical keypoints (Hips, Knees, Ankles)
         self.smoothers = {
             11: PointSmoother(min_cutoff=0.1, beta=0.05), # L Hip
             13: PointSmoother(min_cutoff=0.1, beta=0.05), # L Knee
@@ -78,7 +79,7 @@ class Squat(Exercise):
                 is_valid=False
             )
 
-        # --- 3. Calcolo Geometrico (Media) ---
+        # --- 3. Geometric Calculation (Average) ---
         angle = np.mean(valid_angles)
 
         # --- 3. Delegate to Subsystems ---
@@ -93,7 +94,7 @@ class Squat(Exercise):
         if correction_feedback == "feedback_perfect":
             correction_feedback = "squat_perfect_form"
         
-        # [NEW] Aggiornamento Storia (using NamedTuple for memory efficiency)
+        # [NEW] Update History (using NamedTuple for memory efficiency)
         from src.core.interfaces import HistoryEntry
         self.history.append(HistoryEntry(
             angle=angle,

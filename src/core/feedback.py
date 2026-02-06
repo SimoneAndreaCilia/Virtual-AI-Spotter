@@ -3,12 +3,12 @@ import bisect
 
 class FeedbackSystem:
     """
-    Sistema centralizzato per la gestione dei feedback correttivi.
-    Permette di registrare regole e ottenere il messaggio a più alta priorità.
+    Centralized system for managing corrective feedback.
+    Allows registering rules and getting the highest priority message.
     """
     def __init__(self):
-        # Lista di tuple: (priority, condition_func, message_key)
-        # Priority più alta vince (es. 10 > 1)
+        # List of tuples: (priority, condition_func, message_key)
+        # Higher priority wins (e.g., 10 > 1)
         # Stored in ascending order, iterated in reverse for highest-first
         self.rules: List[Tuple[int, Callable[[Dict[str, Any]], bool], str]] = []
 
@@ -17,12 +17,12 @@ class FeedbackSystem:
                  message_key: str, 
                  priority: int = 1):
         """
-        Aggiunge una regola di feedback.
+        Adds a feedback rule.
         
         Args:
-            condition: Funzione che accetta un 'context' (dict) e ritorna True se c'è un errore.
-            message_key: Chiave del messaggio da mostrare se la condizione è vera.
-            priority: Importanza dell'errore (10=critico, 1=info).
+            condition: Function that accepts a 'context' (dict) and returns True if there's an error.
+            message_key: Key of the message to display if the condition is true.
+            priority: Importance of the error (10=critical, 1=info).
         """
         # Use bisect.insort for O(n) insertion instead of O(n log n) sort
         # Note: bisect sorts ascending, so we iterate in reverse in check()
@@ -30,28 +30,28 @@ class FeedbackSystem:
 
     def check(self, context: Dict[str, Any]) -> Tuple[str, bool]:
         """
-        Verifica tutte le regole contro il contesto fornito.
+        Checks all rules against the provided context.
         
         Returns:
             Tuple[str, bool]: (message_key, is_valid_form)
-            is_valid_form è False se almeno una regola con priorità > 0 scatta.
+            is_valid_form is False if at least one rule with priority > 0 is triggered.
         """
         # Iterate in reverse to check highest priority rules first
         for priority, condition, msg_key in reversed(self.rules):
             if condition(context):
-                # Se la condizione è vera (c'è un problema/stato da segnalare)
-                # Ritorniamo subito il messaggio a più alta priorità
-                # Se priority > 0 consideriamo la form non valida (o warning)
-                is_valid = False # Assumiamo che se c'è un feedback, c'è qualcosa da dire
+                # Condition is true (there's an issue/state to report)
+                # Return immediately the highest priority message
+                # If priority > 0, consider form invalid (or warning)
+                is_valid = False  # Assume if there's feedback, there's something to say
                 
-                # Eccezione: Messaggi "Positivi" (es. Perfect Form) potrebbero avere priorità bassa
-                # Ma qui assumiamo che add_rule sia usato per ERRORI o WARNINGS.
-                # Per messaggi di stato "Good", usiamo un default se loop finisce.
+                # Exception: "Positive" messages (e.g., Perfect Form) may have low priority
+                # But here we assume add_rule is used for ERRORS or WARNINGS.
+                # For "Good" status messages, we use a default if loop finishes.
                 
                 return msg_key, False
         
-        # Nessuna regola scattata -> Feedback positivo di default
+        # No rules triggered -> Default positive feedback
         return "feedback_perfect", True
         
     def reset(self):
-        pass # Stateless per ora
+        pass # Stateless for now

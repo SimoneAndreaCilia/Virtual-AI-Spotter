@@ -3,7 +3,7 @@ import os
 import numpy as np
 import time
 
-# Aggiungi la root al path per importare i moduli src
+# Add root to path for importing src
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.utils.smoothing import OneEuroFilter, PointSmoother
@@ -11,12 +11,12 @@ from src.utils.smoothing import OneEuroFilter, PointSmoother
 def test_one_euro_filter():
     print("Testing OneEuroFilter...")
     
-    # Configurazione filtro
+    # Filter configuration
     min_cutoff = 1.0
     beta = 0.0
     f = OneEuroFilter(min_cutoff=min_cutoff, beta=beta)
     
-    # Generazione segnale rumoroso (onda sinusoidale + rumore)
+    # Generate noisy signal (sine wave + noise)
     t = np.linspace(0, 5, 100)
     signal = np.sin(t)
     noise = np.random.normal(0, 0.1, size=len(t))
@@ -26,13 +26,13 @@ def test_one_euro_filter():
     start_time = time.time()
     
     for i, val in enumerate(noisy_signal):
-        # Simuliamo il tempo reale
+        # Simulate real-time
         current_time = start_time + t[i]
         filtered_val = f(val, current_time)
         filtered_signal.append(filtered_val)
         
-    # Calcolo riduzione Jitter (Varianza delle differenze/derivata)
-    # L'obiettivo è ridurre le fluttuazioni ad alta frequenza
+    # Calculate Jitter reduction (Variance of differences/derivative)
+    # Objective is to reduce high frequency fluctuations
     
     noisy_diff = np.diff(noisy_signal)
     filtered_diff = np.diff(filtered_signal)
@@ -53,8 +53,8 @@ def test_point_smoother():
     ps = PointSmoother(min_cutoff=1.0, beta=1.0)
     
     p1 = (100, 100)
-    p2 = (105, 102) # Piccolo movimento
-    p3 = (200, 200) # Grande Salto (veloce)
+    p2 = (105, 102) # Small movement
+    p3 = (200, 200) # Large jump (fast)
     
     t0 = time.time()
     s1 = ps(p1, t0)
@@ -67,8 +67,8 @@ def test_point_smoother():
     
     # Check basic logic
     assert s1 == p1, "First point should be practically identical"
-    # s2 dovrebbe essere vicino a p2 ma non necessariamente identico (smoothing)
-    # s3 dovrebbe inseguire velocemente p3 grazie a beta
+    # s2 should be close to p2 but not necessarily identical (smoothing)
+    # s3 should follow p3 quickly due to beta
 
 if __name__ == "__main__":
     test_one_euro_filter()
