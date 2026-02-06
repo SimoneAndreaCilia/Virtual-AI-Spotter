@@ -1,23 +1,10 @@
 import logging
 from typing import Dict, Any, Optional
-from dataclasses import dataclass
 from src.core.interfaces import Exercise
 from src.core.protocols import KeypointExtractor
 from src.core.entities.session import Session
+from src.core.entities.ui_state import UIState
 from config.translation_strings import i18n
-
-
-@dataclass
-class UIState:
-    exercise_name: str
-    reps: int
-    target_reps: int
-    current_set: int
-    target_sets: int
-    state: str  # "start", "up", "down"
-    feedback_key: str
-    workout_state: str # "EXERCISE", "REST", "FINISHED"
-    keypoints: Any = None
 
 class SessionManager:
     def __init__(self, db_manager: Any, user_id: int, exercise: Exercise, 
