@@ -11,7 +11,7 @@ import logging
 import time
 from typing import Optional, Dict, Any
 
-from config.settings import LOGS_DIR
+from config.settings import LOGS_DIR, SHOW_FPS, FRAME_SKIP
 from config.translation_strings import i18n
 from src.core.interfaces import VideoSource
 from src.core.protocols import PoseDetector, DatabaseManagerProtocol as DBManager
@@ -19,6 +19,7 @@ from src.core.session_manager import SessionManager
 from src.core.factory import ExerciseFactory
 from src.infrastructure.keypoint_extractor import YoloKeypointExtractor
 from src.ui.visualizer import Visualizer
+from src.utils.performance import FPSCounter
 
 
 class SpotterApp:
@@ -126,6 +127,11 @@ class SpotterApp:
         self.running = True
         logging.info("Starting main loop...")
         
+        # Performance tracking
+        fps_counter = FPSCounter(window_size=30)
+        frame_count = 0
+        last_pose_data = None
+        
         try:
             while self.running:
                 # 1. Input
@@ -134,8 +140,12 @@ class SpotterApp:
                     logging.warning("Frame not received from video source.")
                     break
 
-                # 2. Process (AI Inference)
-                pose_data = self.pose_detector.predict(frame)
+                # 2. Process (AI Inference) - with optional frame skip
+                if FRAME_SKIP == 0 or frame_count % (FRAME_SKIP + 1) == 0:
+                    pose_data = self.pose_detector.predict(frame)
+                    last_pose_data = pose_data
+                else:
+                    pose_data = last_pose_data  # Reuse previous inference
                 
                 # 3. Logic (Update State)
                 # Pass current time for smoothing algorithms
@@ -144,11 +154,19 @@ class SpotterApp:
                 # 4. Render
                 display_frame = self.visualizer.draw_dashboard_from_state(frame, ui_state)
                 
+                # 4b. FPS overlay (optional)
+                if SHOW_FPS:
+                    fps = fps_counter.tick()
+                    cv2.putText(display_frame, f"FPS: {fps:.1f}", (10, 30),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                
                 # 5. Output
                 cv2.imshow(i18n.get('ui_title'), display_frame)
                 
                 # 6. Input Handlers (Keyboard)
                 self._handle_input()
+                
+                frame_count += 1
                 
                 if self.session_manager.is_session_finished():
                     # Optional: wait for user to quit after finish

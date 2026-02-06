@@ -5,7 +5,9 @@ from src.core.protocols import KeypointExtractor
 from src.core.entities.session import Session
 from src.core.entities.ui_state import UIState
 from src.core.entities.workout_state import WorkoutState
+from src.core.gesture_detector import GestureDetector
 from config.translation_strings import i18n
+from config.settings import GESTURE_ENABLED, GESTURE_STABILITY, GESTURE_CONFIDENCE
 
 class SessionManager:
     def __init__(self, db_manager: Any, user_id: int, exercise: Exercise, 
@@ -31,6 +33,13 @@ class SessionManager:
             target_sets=target_sets,
             target_reps=target_reps
         )
+        
+        # Gesture Detector (hands-free control)
+        self.gesture_detector = GestureDetector(
+            stability_frames=GESTURE_STABILITY,
+            confidence_threshold=GESTURE_CONFIDENCE
+        ) if GESTURE_ENABLED else None
+        
         logging.info(f"SessionManager created for {exercise.display_name_key}")
 
     def update(self, pose_data: Any, timestamp: float) -> UIState:
@@ -57,6 +66,15 @@ class SessionManager:
             # Check Set Completion
             if analysis.reps >= self.target_reps:
                 self._complete_set()
+        
+        # Gesture Recognition (hands-free control)
+        if self.gesture_detector and keypoints is not None:
+            gesture = self.gesture_detector.detect(keypoints)
+            if gesture:
+                logging.info(f"GESTURE DETECTED: {gesture} in state {self.workout_state}")
+            if gesture == "THUMBS_UP" and self.workout_state == WorkoutState.REST:
+                logging.info("Triggering CONTINUE via gesture!")
+                self.handle_user_input('CONTINUE')
 
         return UIState(
             exercise_name=i18n.get(self.exercise_logic.display_name_key),
@@ -70,7 +88,7 @@ class SessionManager:
             keypoints=keypoints
         )
 
-    def _complete_set(self):
+    def _complete_set(self) -> None:
         logging.info(f"Set {self.current_set} completed.")
         
         # Save set data

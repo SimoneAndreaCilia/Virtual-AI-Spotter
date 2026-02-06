@@ -53,5 +53,5 @@ class FeedbackSystem:
         # No rules triggered -> Default positive feedback
         return "feedback_perfect", True
         
-    def reset(self):
+    def reset(self) -> None:
         pass # Stateless for now

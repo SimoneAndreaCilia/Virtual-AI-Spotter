@@ -77,7 +77,7 @@ class RepetitionCounter:
             return False
         return all(predicate(x) for x in list(self.history)[-frames:])
     
-    def reset(self):
+    def reset(self) -> None:
         self.reps = 0
         self.state = "start"
         self.history.clear()
