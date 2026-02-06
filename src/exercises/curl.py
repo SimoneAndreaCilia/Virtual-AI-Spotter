@@ -16,10 +16,10 @@ class BicepCurl(Exercise):
         self.display_name_key = "curl_name"
         self.exercise_id = "Bicep Curl"  # Canonical name for database
         
-        # Lato del corpo da analizzare: 'right' o 'left'
+        # Body side to analyze: 'right' or 'left'
         self.side = config.get("side", "right")
 
-        # [NEW] Smoother per i keypoint critici (Spalla, Gomito, Polso per entrambi i lati)
+        # Smoother for critical keypoints (Shoulder, Elbow, Wrist for both sides)
         self.smoothers = {
             5: PointSmoother(min_cutoff=0.1, beta=0.05), # L Shoulder
             7: PointSmoother(min_cutoff=0.1, beta=0.05), # L Elbow

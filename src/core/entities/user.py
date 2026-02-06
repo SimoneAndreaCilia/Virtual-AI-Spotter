@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 @dataclass
 class User:
     """
-    Rappresenta l'utente dell'applicazione.
+    Represents the user of the application.
     """
     username: str
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -16,5 +16,5 @@ class User:
     preferences: Dict[str, Any] = field(default_factory=dict)
     
     def update_preferences(self, new_prefs: Dict[str, Any]):
-        """Aggiorna le preferenze utente."""
+        """Updates user preferences."""
         self.preferences.update(new_prefs)

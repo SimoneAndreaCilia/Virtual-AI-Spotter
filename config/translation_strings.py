@@ -147,5 +147,5 @@ class LanguageManager:
         lang_dict = TRANSLATIONS.get(self.current_lang, TRANSLATIONS["EN"])
         return lang_dict.get(key, f"MISSING: {key}")
 
-# Istanza globale da importare negli altri file
+# Global instance to import into other files
 i18n = LanguageManager()

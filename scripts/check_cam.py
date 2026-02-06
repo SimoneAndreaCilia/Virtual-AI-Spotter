@@ -2,7 +2,7 @@ import sys
 import os
 import cv2
 
-# Aggiungiamo la root del progetto al path di sistema per permettere gli import
+# Add project root to system path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.infrastructure.webcam import WebcamSource
@@ -10,7 +10,7 @@ from src.infrastructure.webcam import WebcamSource
 def main():
     print("Avvio test webcam...")
     try:
-        # Istanziamo la classe Infrastructure
+        # Instantiate Infrastructure class
         cam = WebcamSource(source_index=0)
         print("Webcam inizializzata con successo via Infrastructure Layer.")
         
@@ -22,7 +22,7 @@ def main():
                 
             cv2.imshow('Test Infrastructure', frame)
             
-            # Premi 'q' per uscire
+            # Press 'q' to exit
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
                 

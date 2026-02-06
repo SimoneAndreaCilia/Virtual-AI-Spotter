@@ -10,16 +10,16 @@ from config.settings import HYSTERESIS_TOLERANCE
 
 class TestRepetitionCounter(unittest.TestCase):
     def setUp(self):
-        # Configurazione standard (es. Squat/PushUp)
+        # Standard configuration (e.g. Squat/PushUp)
         # Down: < 90, Up: > 160
         self.fsm = RepetitionCounter(up_threshold=160, down_threshold=90, start_stage="up")
         
-        # Configurazione invertita (es. Curl)
+        # Inverted configuration (e.g. Curl)
         # Up (Flexion): < 30, Down (Extension): > 160
         self.fsm_curl = RepetitionCounter(up_threshold=30, down_threshold=160, start_stage="down", inverted=True)
 
     def test_standard_rep_counting(self):
-        """Testa il conteggio standard: Start -> Down -> Up (Count)"""
+        """Test standard rep counting: Start -> Down -> Up (Count)"""
         # 1. Start UP (Angle 170)
         reps, state = self.fsm.process(170)
         self.assertEqual(state, "up")
@@ -38,7 +38,7 @@ class TestRepetitionCounter(unittest.TestCase):
         self.assertEqual(reps, 1) # Should count here
 
     def test_standard_hysteresis(self):
-        """Testa che piccole variazioni intorno alla soglia non cambino stato subito"""
+        """Test that small variations around the threshold do not immediately change state"""
         # Start Up
         self.fsm.process(170)
         self.fsm.process(170)
@@ -54,7 +54,7 @@ class TestRepetitionCounter(unittest.TestCase):
         self.assertEqual(state, "down")
 
     def test_inverted_rep_counting(self):
-        """Testa logica invertita (Curl): Start Down -> Up (Flexion) -> Rep Count?"""
+        """Test inverted logic (Curl): Start Down -> Up (Flexion) -> Rep Count?"""
         # Curl Start Down (Extension > 160)
         self.fsm_curl.process(170)
         reps, state = self.fsm_curl.process(170)
@@ -78,16 +78,16 @@ class TestRepetitionCounter(unittest.TestCase):
         self.assertEqual(reps, 1) # Count stays same
 
     def test_debouncing_noise(self):
-        """Testa che frame spuri non triggerino il cambio stato"""
+        """Test that noise frames do not trigger state change"""
         # Start Up
         self.fsm.process(170)
         self.fsm.process(170)
         
-        # Singolo frame di rumore (0 gradi - glitch)
+        # Single noise frame (0 degrees - glitch)
         reps, state = self.fsm.process(0)
-        self.assertEqual(state, "up") # Non deve cambiare
+        self.assertEqual(state, "up") # Should not change
         
-        # Ritorno a valore normale
+        # Return to normal value
         reps, state = self.fsm.process(170) 
         self.assertEqual(state, "up")
 

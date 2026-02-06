@@ -1,71 +1,71 @@
 import os
 
-# --- 1. CONFIGURAZIONE PERCORSI (PATHS) ---
-# Calcola dinamicamente la root del progetto per evitare errori "File not found"
+# --- 1. PATH CONFIGURATION ---
+# Dynamically calculate project root to avoid "File not found" errors
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Percorsi assoluti alle risorse
+# Absolute paths to resources
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 MODELS_DIR = os.path.join(ASSETS_DIR, "models")
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 DB_PATH = os.path.join(BASE_DIR, "src", "data", "gym_data.db")
 
-# --- 2. CONFIGURAZIONE AI & MODELLO ---
-MODEL_NAME = "yolov8n-pose.pt" # Modello Nano (più veloce) o 'yolov8s-pose.pt' (più preciso)
+# --- 2. AI & MODEL CONFIGURATION ---
+MODEL_NAME = "yolov8n-pose.pt"  # Nano model (faster) or 'yolov8s-pose.pt' (more accurate)
 MODEL_PATH = os.path.join(MODELS_DIR, MODEL_NAME)
-CONFIDENCE_THRESHOLD = 0.5     # Ignora rilevamenti con confidenza < 50%
-DEVICE = "cuda"                # Usa "cpu" se non hai una GPU NVIDIA, "cuda" o "mps" (Mac)
+CONFIDENCE_THRESHOLD = 0.5     # Ignore detections with confidence < 50%
+DEVICE = "cuda"                # Use "cpu" if no NVIDIA GPU, "cuda" or "mps" (Mac)
 
-# --- 3. CONFIGURAZIONE CAMERA ---
-CAMERA_ID = 0           # 0 per webcam integrata, 1 per esterna
-FRAME_WIDTH = 1280      # Risoluzione desiderata (HD)
+# --- 3. CAMERA CONFIGURATION ---
+CAMERA_ID = 0           # 0 for integrated webcam, 1 for external
+FRAME_WIDTH = 1280      # Desired resolution (HD)
 FRAME_HEIGHT = 720
 FPS = 30
 
-# --- 4. LOGICA ESERCIZI (SOGLIE ANGOLARI) ---
-# Modifica questi valori per calibrare la difficoltà degli esercizi
+# --- 4. EXERCISE LOGIC (ANGULAR THRESHOLDS) ---
+# Modify these values to calibrate exercise difficulty
 
-# Parametri Squat
+# Squat Parameters
 SQUAT_THRESHOLDS = {
-    "UP_ANGLE": 160,       # Gamba quasi dritta (In piedi)
-    "DOWN_ANGLE": 90,      # Accosciata parallela (Orizzontale)
-    "WARN_ANGLE": 110      # Soglia di avvertimento "Scendi di più"
+    "UP_ANGLE": 160,       # Leg almost straight (Standing)
+    "DOWN_ANGLE": 90,      # Parallel squat (Horizontal)
+    "WARN_ANGLE": 110      # Warning threshold "Go lower"
 }
 
-# Parametri Bicep Curl
+# Bicep Curl Parameters
 CURL_THRESHOLDS = {
-    "UP_ANGLE": 30,        # Massima contrazione (Mani vicino alle spalle)
-    "DOWN_ANGLE": 160,     # Braccio disteso
-    "ERROR_ELBOW": 15      # Tolleranza movimento gomito (se si muove troppo è errore)
+    "UP_ANGLE": 30,        # Maximum contraction (Hands near shoulders)
+    "DOWN_ANGLE": 160,     # Arm extended
+    "ERROR_ELBOW": 15      # Elbow movement tolerance (too much = error)
 }
 
-# Parametri Push Up
+# Push Up Parameters
 PUSHUP_THRESHOLDS = {
     "UP_ANGLE": 160,       # Arms extended
     "DOWN_ANGLE": 90,      # Arms bent at 90 degrees
     "FORM_ANGLE_MIN": 160  # Body line tolerance (approx 180 is straight)
 }
 
-# Parametri Smoothing (Strutture Dati)
-BUFFER_SIZE = 10           # Numero di frame per la media mobile (riduce il tremolio)
-HYSTERESIS_TOLERANCE = 5   # Tolleranza (gradi) per il debouncing del cambio stato (es. +5/-5)
+# Smoothing Parameters (Data Structures)
+BUFFER_SIZE = 10           # Number of frames for moving average (reduces jitter)
+HYSTERESIS_TOLERANCE = 5   # Tolerance (degrees) for state change debouncing (e.g., +5/-5)
 
-# --- 5. VISUALIZZAZIONE (UI) ---
-# Colori in formato BGR (Blue, Green, Red) per OpenCV
+# --- 5. VISUALIZATION (UI) ---
+# Colors in BGR format (Blue, Green, Red) for OpenCV
 COLORS = {
     "WHITE": (255, 255, 255),
     "BLACK": (0, 0, 0),
-    "GREEN": (0, 255, 0),      # Successo / Form Corretta
-    "RED": (0, 0, 255),        # Errore / Form Errata
-    "YELLOW": (0, 255, 255),   # Warning / Info / Giunti
-    "BLUE": (255, 0, 0),       # Scheletro
-    "GRAY": (128, 128, 128),   # Grigio standard
-    "OVERLAY_BG": (40, 40, 40) # Sfondo scuro semitrasparente
+    "GREEN": (0, 255, 0),      # Success / Correct Form
+    "RED": (0, 0, 255),        # Error / Wrong Form
+    "YELLOW": (0, 255, 255),   # Warning / Info / Joints
+    "BLUE": (255, 0, 0),       # Skeleton
+    "GRAY": (128, 128, 128),   # Standard gray
+    "OVERLAY_BG": (40, 40, 40) # Dark semi-transparent background
 }
 
-# Spessori linee
+# Line thickness
 THICKNESS = {
     "SKELETON": 2,
     "TEXT": 2,
-    "BOX": -1  # -1 riempie la forma
+    "BOX": -1  # -1 fills the shape
 }

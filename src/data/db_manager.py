@@ -8,8 +8,8 @@ from src.core.entities.session import Session
 
 class DatabaseManager:
     def __init__(self, db_path: str = "src/data/gym.db", schema_path: str = "src/data/schema.sql"):
-        # Assicuriamoci che la cartella 'src/data' esista o che il percorso sia assoluto
-        # Se lo script viene lanciato da root, 'src/data/gym.db' funziona.
+        # Ensure 'src/data' folder exists or path is absolute
+        # If script is run from root, 'src/data/gym.db' works.
         self.db_path = db_path
         self.schema_path = schema_path
         self._init_db()
@@ -20,9 +20,9 @@ class DatabaseManager:
         return conn
 
     def _init_db(self):
-        """Inizializza il database creando le tabelle se non esistono."""
+        """Initialize database by creating tables if they don't exist."""
         if not os.path.exists(self.schema_path):
-             # Fallback se lo schema non è trovato dove previsto (es. test)
+             # Fallback if schema not found at expected location (e.g., tests)
              self.schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
         
         with open(self.schema_path, "r") as f:
@@ -61,7 +61,7 @@ class DatabaseManager:
             conn.close()
 
     def get_user(self, user_id: Optional[str] = None) -> Optional[User]:
-        """Recupera un utente per ID, o l'ultimo creato se ID è None."""
+        """Retrieve a user by ID, or the last created if ID is None."""
         conn = self._get_connection()
         cursor = conn.cursor()
         
@@ -98,10 +98,10 @@ class DatabaseManager:
     # --- SESSION OPERATIONS ---
 
     def save_session(self, session: Session):
-        """Salva la sessione e tutti i suoi esercizi."""
+        """Save the session and all its exercises."""
         conn = self._get_connection()
         try:
-            # 1. Salva Sessione
+            # 1. Save Session
             conn.execute(
                 """
                 INSERT INTO sessions (id, user_id, start_time, end_time)
@@ -117,9 +117,9 @@ class DatabaseManager:
                 )
             )
             
-            # 2. Salva Esercizi (Semplificato: li aggiungiamo tutti, idealmente solo i nuovi)
-            # Per evitare duplicati in questa implementazione semplice, cancelliamo e riscriviamo gli esercizi di questa sessione
-            # In produzione: meglio una logica di append o ID univoci per esercizi
+            # 2. Save Exercises (Simplified: add all, ideally only new ones)
+            # To avoid duplicates in this simple implementation, delete and rewrite exercises for this session
+            # In production: better to use append logic or unique IDs for exercises
             conn.execute("DELETE FROM exercises WHERE session_id = ?", (session.id,))
             
             for ex in session.exercises:
@@ -132,7 +132,7 @@ class DatabaseManager:
                         session.id,
                         ex.get("name", "Unknown"),
                         ex.get("reps", 0),
-                        json.dumps(ex) # Salviamo tutto il dizionario come JSON
+                        json.dumps(ex)  # Save entire dict as JSON
                     )
                 )
             

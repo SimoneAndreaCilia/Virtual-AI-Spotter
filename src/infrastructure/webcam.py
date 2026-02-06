@@ -7,20 +7,20 @@ from config.settings import CAMERA_ID, FRAME_WIDTH, FRAME_HEIGHT
 class WebcamSource(VideoSource):
     def __init__(self, source_index: int = CAMERA_ID, width: int = FRAME_WIDTH, height: int = FRAME_HEIGHT):
         self.source_index = source_index
-        # Inizializza la cattura video
+        # Initialize video capture
         self.cap = cv2.VideoCapture(self.source_index)
         
-        # Imposta risoluzione (HD per default)
+        # Set resolution (HD by default)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         
-        # Check immediato se la camera è accessibile
+        # Immediate check if camera is accessible
         if not self.cap.isOpened():
-            raise ValueError(f"Impossibile aprire la webcam con indice {source_index}")
+            raise ValueError(f"Unable to open webcam with index {source_index}")
 
     def get_frame(self) -> Tuple[bool, np.ndarray]:
         """
-        Legge un frame dalla webcam.
+        Reads a frame from the webcam.
         Returns: (ret, frame)
         """
         if not self.cap.isOpened():
@@ -30,6 +30,6 @@ class WebcamSource(VideoSource):
         return ret, frame
 
     def release(self):
-        """Rilascia le risorse hardware."""
+        """Release hardware resources."""
         if self.cap.isOpened():
             self.cap.release()

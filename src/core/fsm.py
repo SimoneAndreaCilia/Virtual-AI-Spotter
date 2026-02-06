@@ -4,8 +4,8 @@ from config.settings import HYSTERESIS_TOLERANCE
 
 class RepetitionCounter:
     """
-    Gestisce la logica della macchina a stati per contare le ripetizioni.
-    Incorpora il debouncing per evitare falsi conteggi dovuti al jitter.
+    Manages the logic of the state machine to count repetitions.
+    Incorporates debouncing to avoid false counts due to jitter.
     """
     def __init__(self, up_threshold: float, down_threshold: float, start_stage: str = "start", inverted: bool = False, state_prefix: str = ""):
         self.up_threshold = up_threshold
@@ -13,9 +13,9 @@ class RepetitionCounter:
         self.state_prefix = state_prefix
         self.state = self._prefixed(start_stage)
         self.reps = 0
-        self.inverted = inverted # Se True: Up è angolo PICCOLO, Down è angolo GRANDE
+        self.inverted = inverted  # If True: Up = SMALL angle, Down = LARGE angle
         
-        # Buffer locale per la stabilità del segnale (es. ultimi 5 angoli)
+        # Local buffer for signal stability (e.g., last 5 angles)
         self.history = deque(maxlen=5)
     
     def _prefixed(self, state: str) -> str:
@@ -26,14 +26,14 @@ class RepetitionCounter:
 
     def process(self, angle: float) -> Tuple[int, str]:
         """
-        Analizza il nuovo angolo e aggiorna lo stato e le ripetizioni.
+        Analyzes the new angle and updates the state and reps.
         """
         self.history.append(angle)
         
         if not self.inverted:
             # --- STANDARD LOGIC (Squat, PushUp) ---
-            # DOWN: Angolo diminuisce (si scende sotto soglia)
-            # UP: Angolo aumenta (si sale sopra soglia)
+            # DOWN: Angle decreases (goes below threshold)
+            # UP: Angle increases (goes above threshold)
             
             # DOWN TRANSITION
             if angle < self.down_threshold + HYSTERESIS_TOLERANCE:
@@ -51,8 +51,8 @@ class RepetitionCounter:
         
         else:
             # --- INVERTED LOGIC (Bicep Curl) ---
-            # DOWN (Estensione): Angolo AUMENTA (si estende braccio > 160)
-            # UP (Flessione/Contrazione): Angolo DIMINUISCE (< 30)
+            # DOWN (Extension): Angle INCREASES (extends arm > 160)
+            # UP (Flexion/Contraction): Angle DECREASES (< 30)
             
             # DOWN TRANSITION
             if angle > self.down_threshold - HYSTERESIS_TOLERANCE:
@@ -66,13 +66,13 @@ class RepetitionCounter:
                         self.reps += 1
                         self.state = self._prefixed("up")
                     elif self.state == "start":
-                        # Se partiamo già piegati? Mmh, di solito si parte distesi (down)
+                        # If we start already bent? Usually we start extended (down)
                         self.state = self._prefixed("up")
             
         return self.reps, self.state
 
     def _is_stable(self, predicate: Callable[[float], bool], frames: int = 2) -> bool:
-        """Controlla se la condizione è vera per 'frames' consecutivi."""
+        """Checks if a condition is true for 'frames' consecutive frames."""
         if len(self.history) < frames:
             return False
         return all(predicate(x) for x in list(self.history)[-frames:])

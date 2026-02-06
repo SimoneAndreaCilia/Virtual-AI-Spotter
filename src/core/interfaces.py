@@ -26,15 +26,15 @@ class PushUpHistoryEntry(NamedTuple):
 class AnalysisResult:
     reps: int
     stage: str  # "up", "down", "start"
-    correction: str  # Feedback es. "Schiena dritta!"
-    angle: float     # Angolo corrente
-    is_valid: bool   # Se la forma è corretta
+    correction: str  # Feedback e.g. "Keep back straight!"
+    angle: float     # Current angle
+    is_valid: bool   # Whether form is correct
 
 class Exercise(ABC):
     """
-    Classe Astratta Base (Interface).
-    Ogni nuovo esercizio (Squat, Curl, PushUp) DEVE ereditare da questa classe
-    e implementare questi metodi.
+    Abstract Base Class (Interface).
+    Each new exercise (Squat, Curl, PushUp) MUST inherit from this class
+    and implement these methods.
     """
 
 
@@ -43,20 +43,20 @@ class Exercise(ABC):
         self.config = config
         self.reps = 0
         self.stage = "start"
-        # [NEW] Buffer circolare per analizzare la storia recente (es. ultimi 30 frame ~ 1 sec)
+        # Circular buffer for recent history analysis (e.g., last 30 frames ~ 1 sec)
         self.history = deque(maxlen=30)
-        # [NEW] Dizionario dei filtri per i keypoint (Idx -> PointSmoother)
+        # Dictionary of keypoint filters (Idx -> PointSmoother)
         self.smoothers: Dict[int, Any] = {}
         
-        # [NEW] Chiave per localizzazione nome esercizio (OCP)
+        # Localization key for exercise display name (OCP)
         self.display_name_key: str = ""
-        # [NEW] Canonical exercise name for database storage
+        # Canonical exercise name for database storage
         self.exercise_id: str = ""
 
     def smooth_landmarks(self, landmarks: np.ndarray, timestamp: float = None) -> np.ndarray:
         """
-        Applica lo smoothing ai keypoint registrati in self.smoothers.
-        Restituisce una copia dei landmarks con le coordinate (x,y) filtrate.
+        Applies smoothing to keypoints registered in self.smoothers.
+        Returns a copy of the landmarks with filtered (x,y) coordinates.
         """
         smoothed = landmarks.copy()
         
@@ -116,21 +116,21 @@ class Exercise(ABC):
 
     def _is_stable_change(self, predicate, consistency_frames: int = 3) -> bool:
         """
-        Verifica se una condizione (predicate) è stata vera per gli ultimi N frame.
-        Utile per debouncing (evitare cambi di stato su singoli frame spuri).
+        Checks if a condition (predicate) has been true for the last N frames.
+        Useful for debouncing (avoiding state changes on spurious frames).
         
         Args:
-            predicate: Funzione che accetta un item della history e restituisce bool.
-            consistency_frames: Numero di frame consecutivi richiesti.
+            predicate: Function that accepts an item from history and returns bool.
+            consistency_frames: Number of consecutive frames required.
             
         Returns:
-            bool: True se la condizione è stabile.
+            bool: True if the condition is stable.
         """
         if len(self.history) < consistency_frames:
             return False
             
-        # Controlliamo gli ultimi N elementi della storia
-        # History è una deque, quindi iteriamo gli ultimi N
+        # Check the last N elements of history
+        # History is a deque, so we iterate the last N
         recent_history = list(self.history)[-consistency_frames:]
         
         return all(predicate(item) for item in recent_history)
@@ -138,15 +138,15 @@ class Exercise(ABC):
     @abstractmethod
     def process_frame(self, landmarks: np.ndarray, timestamp: float = None) -> AnalysisResult:
         """
-        Prende i keypoint (scheletro) e restituisce il risultato dell'analisi.
-        Opzionale: timestamp per gestire video preregistrati o lag.
+        Takes keypoints (skeleton) and returns the analysis result.
+        Optional: timestamp for handling prerecorded videos or lag.
         """
         pass
 
     def reset(self):
         """
-        Resetta il conteggio, lo stato, la storia e i filtri.
-        Le classi figlie possono fare override ma dovrebbero chiamare super().reset()
+        Resets the count, state, history, and filters.
+        Child classes can override but should call super().reset()
         """
         self.reps = 0
         self.stage = "start"
@@ -156,13 +156,13 @@ class Exercise(ABC):
 
 class VideoSource(ABC):
     """
-    Interfaccia per la sorgente video.
-    Permette di scambiare Webcam con File Video senza rompere il codice.
+    Interface for video source.
+    Allows swapping Webcam with Video File without breaking code.
     """
     
     @abstractmethod
     def get_frame(self) -> Tuple[bool, np.ndarray]:
-        """Restituisce (ret, frame) come OpenCV."""
+        """Returns (ret, frame) like OpenCV."""
         pass
 
     @abstractmethod
