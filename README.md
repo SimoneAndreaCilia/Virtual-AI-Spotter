@@ -25,6 +25,8 @@
 - **Form Correction**: Instant feedback on posture (e.g., "Lower your hips", "Straighten back") using a modular **Feedback System**.
 - **Multi-language Support**: Fully localized interface (Italian/English) with dynamic switching.
 - **High-Performance HUD**: Optimized Visualizer engine using ROI-based Alpha Blending for smooth, transparent overlays.
+- **Gesture Control**: Hands-free interaction using pose-based gestures (e.g., raised arm to skip rest periods).
+- **Extensible Architecture**: Factory + Registry Pattern enables adding new exercises without modifying core code. Dependency Injection via Python Protocols for testability.
 
 ## MVP Scope (Minimum Viable Product)
 The initial release focuses on 4 fundamental exercises that test different aspects of the tracking engine:
@@ -50,29 +52,166 @@ The initial release focuses on 4 fundamental exercises that test different aspec
 
 ## System Architecture
 
-### 1. Object-Oriented Design & Core Modules
-To ensure scalability, the project follows strict OOP and SOLID principles:
-*   **Abstract Base Class (`Exercise`)**: Defines the contract for all exercises.
-*   **FSM Core (`src/core/fsm.py`)**: A reusable `RepetitionCounter` class handles state transitions, debouncing, and hysteresis. It supports both standard (Squat) and inverted (Curl) logic.
-*   **Feedback Core (`src/core/feedback.py`)**: A `FeedbackSystem` class aggregates form check rules and prioritizes critical messages.
+The project follows a **Layered Architecture** with clear separation of concerns, enabling testability, extensibility (Open/Closed Principle), and adherence to Domain-Driven Design (DDD) principles.
 
-### 2. High-Performance Optimization
-*   **Geometry Engine**: NumPy overhead removed in favor of standard `math` for critical vector calculations (`src/utils/geometry.py`).
-*   **Visualizer**: Implemented Region-of-Interest (ROI) alpha blending to minimize pixel operations during HUD rendering.
+### Data Flow Diagram
 
-### 3. Data Structures & Algorithms
-*   **Circular Buffer**: Using `collections.deque` to maintain a sliding window of the last 30 frames for temporal smoothing.
-*   **One Euro Filter**: Advanced jitter reduction for keypoint data.
+```mermaid
+graph TD
+    A["📷 Webcam"] --> B["🤖 YOLOv8 Pose"]
+    B --> C["🔑 Keypoint Extractor"]
+    C --> D["📐 Geometry Engine"]
+    D --> E["⚙️ FSM State Machine"]
+    E --> F["💬 Feedback System"]
+    F --> G["🖥️ Visualizer"]
+    G --> H["🎨 UI Renderers"]
+    
+    subgraph "Infrastructure Layer"
+        A
+        B
+        C
+    end
+    
+    subgraph "Core Domain"
+        D
+        E
+        F
+    end
+    
+    subgraph "Presentation Layer"
+        G
+        H
+    end
+```
 
-### 4. Hybrid Cloud Architecture (Edge + AWS)
-*   **Edge (Local PC/GPU)**: AI inference runs locally for zero-latency feedback.
-*   **Cloud (AWS)**: Asynchronous synchronization to DynamoDB and S3 via Lambda functions.
+### 1. Core Domain (`src/core`)
 
-### 5. Quality Assurance
-*   **Unit Testing**: Comprehensive tests in `tests/` covering:
-    *   FSM Logic (Standard, Inverted, Debouncing).
-    *   Geometric Calculations.
-    *   Database Integrations.
+Business logic is fully isolated from external dependencies:
+
+*   **Entities** (`src/core/entities/`): Domain objects following DDD — `Session`, `User`, `WorkoutState`, `UIState`.
+*   **FSM Core** (`fsm.py`): Reusable `RepetitionCounter` with debouncing, hysteresis, and support for standard/inverted logic.
+*   **Feedback System** (`feedback.py`): Aggregates form-check rules and prioritizes messages.
+*   **Factory + Registry** (`factory.py`, `registry.py`): Exercises self-register via `@register_exercise` decorator — no if/elif chains.
+*   **Session Manager** (`session_manager.py`): Orchestrates workout flow, rest periods, and set progression.
+*   **Dependency Injection**: Abstractions defined in `protocols.py` (PoseDetector, KeypointExtractor, DatabaseManagerProtocol) enable mock injection for CI/CD testing.
+
+### 2. Infrastructure Layer (`src/infrastructure`)
+
+Handles external integrations, decoupled from business logic:
+
+*   **AI Inference** (`ai_inference.py`): YOLO model wrapper implementing `PoseDetector` protocol.
+*   **Keypoint Extractor** (`keypoint_extractor.py`): Transforms raw YOLO output to standardized 17×3 arrays.
+*   **Webcam** (`webcam.py`): Frame capture abstraction for easy replacement with video files or streams.
+
+### 3. UI & Visualization (`src/ui`)
+
+Presentation layer with separated rendering responsibilities:
+
+*   **Visualizer** (`visualizer.py`): Facade coordinating all renderers.
+*   **Dashboard Renderer**: Draws HUD panels (reps, sets, feedback text).
+*   **Overlay Renderer**: Transparent overlays using ROI-based alpha blending.
+*   **Skeleton Renderer**: Draws pose skeleton connections.
+
+### 4. Signal Processing (`src/utils`)
+
+*   **Geometry Engine** (`geometry.py`): Pure `math`-based vector calculations (no NumPy overhead).
+*   **Smoothing** (`smoothing.py`): One Euro Filter for jitter reduction.
+*   **Circular Buffer**: `collections.deque` for temporal smoothing (30-frame window).
+
+### 5. Hybrid Cloud Architecture
+
+*   **Edge**: Real-time inference on local PC/GPU for zero-latency feedback.
+*   **Cloud (AWS)**: Planned async sync to DynamoDB/S3 via Lambda.
+
+### 6. Quality Assurance
+
+*   **Unit Tests** (`tests/`): 16 test files covering FSM, Geometry, SessionManager, Gesture Detection, DI mocks.
+*   **Verification Scripts**: Manual validation tools for debouncing, i18n, refactoring.
+
+---
+
+<details>
+<summary>📂 <strong>View Project Structure (File Tree)</strong></summary>
+
+```
+├── 📁 .github
+│   └── 📁 workflows
+├── 📁 assets
+│   └── 📁 models
+│       └── 📄 yolov8n-pose.pt
+├── 📁 config
+│   ├── 🐍 settings.py
+│   └── 🐍 translation_strings.py
+├── 📁 scripts
+│   ├── 🐍 check_cam.py
+│   └── 🐍 verify_refactor.py
+├── 📁 src
+│   ├── 📁 core
+│   │   ├── 📁 entities
+│   │   │   ├── 🐍 session.py
+│   │   │   ├── 🐍 ui_state.py
+│   │   │   ├── 🐍 user.py
+│   │   │   └── 🐍 workout_state.py
+│   │   ├── 🐍 app.py
+│   │   ├── 🐍 factory.py
+│   │   ├── 🐍 feedback.py
+│   │   ├── 🐍 fsm.py
+│   │   ├── 🐍 gesture_detector.py
+│   │   ├── 🐍 interfaces.py
+│   │   ├── 🐍 protocols.py
+│   │   ├── 🐍 registry.py
+│   │   └── 🐍 session_manager.py
+│   ├── 📁 data
+│   │   ├── 🐍 db_manager.py
+│   │   └── 📄 schema.sql
+│   ├── 📁 exercises
+│   │   ├── 🐍 __init__.py
+│   │   ├── 🐍 curl.py
+│   │   ├── 🐍 pushup.py
+│   │   └── 🐍 squat.py
+│   ├── 📁 infrastructure
+│   │   ├── 🐍 ai_inference.py
+│   │   ├── 🐍 keypoint_extractor.py
+│   │   └── 🐍 webcam.py
+│   ├── 📁 ui
+│   │   ├── 🐍 cli.py
+│   │   ├── 🐍 dashboard_renderer.py
+│   │   ├── 🐍 overlay_renderer.py
+│   │   ├── 🐍 skeleton_renderer.py
+│   │   └── 🐍 visualizer.py
+│   └── 📁 utils
+│       ├── 🐍 geometry.py
+│       ├── 🐍 performance.py
+│       └── 🐍 smoothing.py
+├── 📁 tests
+│   ├── 📁 mocks
+│   │   ├── 🐍 __init__.py
+│   │   ├── 🐍 mock_pose.py
+│   │   └── 🐍 mock_video.py
+│   ├── 🐍 __init__.py
+│   ├── 🐍 helpers.py
+│   ├── 🐍 test_app_di.py
+│   ├── 🐍 test_db_manual.py
+│   ├── 🐍 test_entities_manual.py
+│   ├── 🐍 test_fsm.py
+│   ├── 🐍 test_geometry.py
+│   ├── 🐍 test_gesture.py
+│   ├── 🐍 test_pose_estimator.py
+│   ├── 🐍 test_session_manager.py
+│   ├── 🐍 test_smoothing.py
+│   ├── 🐍 test_visualizer.py
+│   ├── 🐍 verify_debouncing.py
+│   ├── 🐍 verify_features.py
+│   ├── 🐍 verify_i18n.py
+│   └── 🐍 verify_refactor.py
+├── ⚙️ .gitignore
+├── 📄 LICENSE
+├── 📝 README.md
+├── 🐍 main.py
+└── 📄 requirements.txt
+```
+
+</details>
 
 ---
 
