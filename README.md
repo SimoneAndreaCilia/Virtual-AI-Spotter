@@ -57,31 +57,46 @@ The project follows a **Layered Architecture** with clear separation of concerns
 ### Data Flow Diagram
 
 ```mermaid
-graph TD
-    A["📷 Webcam"] --> B["🤖 YOLOv8 Pose"]
-    B --> C["🔑 Keypoint Extractor"]
-    C --> D["📐 Geometry Engine"]
-    D --> E["⚙️ FSM State Machine"]
-    E --> F["💬 Feedback System"]
-    F --> G["🖥️ Visualizer"]
-    G --> H["🎨 UI Renderers"]
-    
-    subgraph "Infrastructure Layer"
-        A
-        B
-        C
+%%{init: {'theme': 'neutral'}}%%
+graph LR
+    subgraph INFRA["🔌 Infrastructure Layer"]
+        direction TB
+        A["📷 Webcam"] --> B["🤖 YOLOv8 Pose"]
+        B --> C["🔑 Keypoint Extractor"]
     end
-    
-    subgraph "Core Domain"
-        D
-        E
-        F
+
+    subgraph CORE["⚡ Core Domain"]
+        direction TB
+        D["📐 Geometry Engine"] --> E["⚙️ FSM"]
+        E --> F["💬 Feedback"]
     end
-    
-    subgraph "Presentation Layer"
-        G
-        H
+
+    subgraph UI["🎨 Presentation Layer"]
+        direction TB
+        G["🖥️ Visualizer"] --> H["📊 Renderers"]
     end
+
+    C ==> D
+    F ==> G
+
+    %% Layer styling - pastel fills, semantic strokes
+    style INFRA fill:#f3f4f6,stroke:#6b7280,stroke-width:2px,color:#374151
+    style CORE fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e40af
+    style UI fill:#f5f3ff,stroke:#8b5cf6,stroke-width:2px,color:#5b21b6
+
+    %% Node styling - light backgrounds, dark text
+    style A fill:#ffffff,stroke:#9ca3af,stroke-width:1px,color:#1f2937
+    style B fill:#ffffff,stroke:#9ca3af,stroke-width:1px,color:#1f2937
+    style C fill:#ffffff,stroke:#9ca3af,stroke-width:1px,color:#1f2937
+    style D fill:#ffffff,stroke:#60a5fa,stroke-width:1px,color:#1e3a8a
+    style E fill:#ffffff,stroke:#60a5fa,stroke-width:1px,color:#1e3a8a
+    style F fill:#ffffff,stroke:#60a5fa,stroke-width:1px,color:#1e3a8a
+    style G fill:#ffffff,stroke:#a78bfa,stroke-width:1px,color:#4c1d95
+    style H fill:#ffffff,stroke:#a78bfa,stroke-width:1px,color:#4c1d95
+
+    linkStyle default stroke:#64748b,stroke-width:1px
+    linkStyle 3 stroke:#059669,stroke-width:2px
+    linkStyle 4 stroke:#059669,stroke-width:2px
 ```
 
 ### 1. Core Domain (`src/core`)
