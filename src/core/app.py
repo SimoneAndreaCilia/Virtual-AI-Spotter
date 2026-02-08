@@ -139,14 +139,20 @@ class SpotterApp:
         fps_counter = FPSCounter(window_size=30)
         frame_count = 0
         last_pose_data = None
+        frame_fail_count = 0  # Rate-limit logging for frame failures
         
         try:
             while self.running:
                 # 1. Input
                 ret, frame = self.video_source.get_frame()
                 if not ret:
-                    logging.warning("Frame not received from video source.")
-                    break
+                    frame_fail_count += 1
+                    # Rate-limited logging: log first failure and every 30th
+                    if frame_fail_count == 1 or frame_fail_count % 30 == 0:
+                        logging.warning(f"Frame read failed ({frame_fail_count} consecutive)")
+                    continue  # Allow recovery instead of immediate break
+                
+                frame_fail_count = 0  # Reset on success
 
                 # 2. Process (AI Inference) - with optional frame skip
                 if FRAME_SKIP == 0 or frame_count % (FRAME_SKIP + 1) == 0:

@@ -23,6 +23,10 @@ class PoseEstimator:
         """
         Runs inference on the frame.
         Returns the raw results object (to be parsed by logic layer).
+        
+        Note: PyTorch/YOLO manages GPU memory internally via autograd.
+        Results are lightweight wrappers; explicit cleanup via del/gc
+        is not required for typical usage but may help in edge cases.
         """
         if self.model is None:
             return None
