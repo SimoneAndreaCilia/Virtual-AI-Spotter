@@ -1,17 +1,16 @@
 import logging
 from typing import Dict, Any, Optional
 from src.core.interfaces import Exercise
-from src.core.protocols import KeypointExtractor
+from src.core.protocols import KeypointExtractor, GestureHandlerProtocol
 from src.core.entities.session import Session
 from src.core.entities.ui_state import UIState
 from src.core.entities.workout_state import WorkoutState
-from src.core.gesture_detector import GestureDetector
 from config.translation_strings import i18n
-from config.settings import GESTURE_ENABLED, GESTURE_STABILITY, GESTURE_CONFIDENCE
 
 class SessionManager:
     def __init__(self, db_manager: Any, user_id: int, exercise: Exercise, 
-                 keypoint_extractor: KeypointExtractor, target_sets: int, target_reps: int):
+                 keypoint_extractor: KeypointExtractor, target_sets: int, target_reps: int,
+                 gesture_handler: Optional[GestureHandlerProtocol] = None):
         self.db_manager: Any = db_manager
         self.user_id: int = user_id
         
@@ -34,11 +33,8 @@ class SessionManager:
             target_reps=target_reps
         )
         
-        # Gesture Detector (hands-free control)
-        self.gesture_detector = GestureDetector(
-            stability_frames=GESTURE_STABILITY,
-            confidence_threshold=GESTURE_CONFIDENCE
-        ) if GESTURE_ENABLED else None
+        # Gesture Handler (injected collaborator for hands-free control)
+        self.gesture_handler = gesture_handler
         
         logging.info(f"SessionManager created for {exercise.display_name_key}")
 
@@ -67,14 +63,11 @@ class SessionManager:
             if analysis.reps >= self.target_reps:
                 self._complete_set()
         
-        # Gesture Recognition (hands-free control)
-        if self.gesture_detector and keypoints is not None:
-            gesture = self.gesture_detector.detect(keypoints)
-            if gesture:
-                logging.info(f"GESTURE DETECTED: {gesture} in state {self.workout_state}")
-            if gesture == "THUMBS_UP" and self.workout_state == WorkoutState.REST:
-                logging.info("Triggering CONTINUE via gesture!")
-                self.handle_user_input('CONTINUE')
+        # Gesture Recognition (delegated to injected handler)
+        if self.gesture_handler and keypoints is not None:
+            action = self.gesture_handler.process(keypoints, self.workout_state.value)
+            if action:
+                self.handle_user_input(action)
 
         return UIState(
             exercise_name=i18n.get(self.exercise_logic.display_name_key),

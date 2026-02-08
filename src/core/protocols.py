@@ -79,3 +79,31 @@ class KeypointExtractor(Protocol):
             - keypoints: 17x3 numpy array (x, y, confidence) or None
         """
         ...
+
+
+@runtime_checkable
+class GestureHandlerProtocol(Protocol):
+    """
+    Protocol for gesture handling.
+    
+    Implementations:
+    - GestureHandler (real implementation)
+    - Mock for testing
+    """
+    
+    def process(self, keypoints: Optional[np.ndarray], current_state: str) -> Optional[str]:
+        """
+        Detect gesture and return corresponding action if applicable.
+        
+        Args:
+            keypoints: Pose keypoints or None
+            current_state: Current workout state
+            
+        Returns:
+            Action string or None
+        """
+        ...
+    
+    def reset(self) -> None:
+        """Clear gesture history."""
+        ...

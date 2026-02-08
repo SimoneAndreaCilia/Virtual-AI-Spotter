@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Dict, Any
-from src.core.interfaces import Exercise, AnalysisResult
+from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry
 from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
@@ -95,7 +95,6 @@ class Squat(Exercise):
             correction_feedback = "squat_perfect_form"
         
         # [NEW] Update History (using NamedTuple for memory efficiency)
-        from src.core.interfaces import HistoryEntry
         self.history.append(HistoryEntry(
             angle=angle,
             stage=self.stage,

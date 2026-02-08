@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Dict, Any, Tuple
-from src.core.interfaces import Exercise, AnalysisResult
+from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry
 from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
@@ -78,7 +78,7 @@ class BicepCurl(Exercise):
             if angle is not None:
                 valid_angles.append(angle)
 
-        # Se non abbiamo angoli validi
+        # If we don't have valid angles
         if len(valid_angles) < len(sides_to_process):
             return AnalysisResult(
                 reps=self.reps,
@@ -88,10 +88,10 @@ class BicepCurl(Exercise):
                 is_valid=False
             )
 
-        # --- 3. Calcolo Geometrico (Media) ---
+        # --- 3. Calculate Geometry (Average) ---
         angle = np.mean(valid_angles)
 
-        # --- 3. Delegate to Subsystems ---
+        # --- 4. Delegate to Subsystems ---
         
         # A. FSM Rep Counting
         self.reps, stage_raw = self.fsm.process(angle)
@@ -104,8 +104,7 @@ class BicepCurl(Exercise):
         if correction_feedback == "feedback_perfect":
              correction_feedback = "curl_perfect_form"
 
-        # [NEW] Aggiornamento Storia (using NamedTuple for memory efficiency)
-        from src.core.interfaces import HistoryEntry
+        # [NEW] Update History (using NamedTuple for memory efficiency)
         self.history.append(HistoryEntry(
             angle=angle,
             stage=self.stage,

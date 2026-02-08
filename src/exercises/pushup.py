@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Dict, Any, List, Optional
-from src.core.interfaces import Exercise, AnalysisResult
+from src.core.interfaces import Exercise, AnalysisResult, PushUpHistoryEntry
 from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
@@ -173,7 +173,6 @@ class PushUp(Exercise):
             correction_feedback = "pushup_perfect_form"
 
         # --- History Update (using NamedTuple for memory efficiency) ---
-        from src.core.interfaces import PushUpHistoryEntry
         self.history.append(PushUpHistoryEntry(
             angle=current_angle,
             body_angle=current_body_angle,
