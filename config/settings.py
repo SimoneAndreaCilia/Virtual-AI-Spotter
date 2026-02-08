@@ -49,6 +49,7 @@ PUSHUP_THRESHOLDS = {
 # Smoothing Parameters (Data Structures)
 BUFFER_SIZE = 10           # Number of frames for moving average (reduces jitter)
 HYSTERESIS_TOLERANCE = 5   # Tolerance (degrees) for state change debouncing (e.g., +5/-5)
+FSM_STABILITY_FRAMES = 2   # Consecutive frames required for state transition
 
 # --- 4b. PERFORMANCE SETTINGS ---
 SHOW_FPS = True            # Display FPS counter in HUD
