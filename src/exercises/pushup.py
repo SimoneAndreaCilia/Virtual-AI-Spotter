@@ -56,7 +56,7 @@ class PushUp(Exercise):
             priority=5
         )
 
-    def process_frame(self, landmarks: np.ndarray, timestamp: float = None) -> AnalysisResult:
+    def process_frame(self, landmarks: np.ndarray, timestamp: Optional[float] = None) -> AnalysisResult:
         """
         Input: landmarks (Array 17x3 from YOLO: [x, y, conf])
         Output: AnalysisResult
