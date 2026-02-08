@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry
 from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
@@ -51,7 +51,7 @@ class BicepCurl(Exercise):
             priority=5
         )
 
-    def process_frame(self, landmarks: np.ndarray, timestamp: float = None) -> AnalysisResult:
+    def process_frame(self, landmarks: np.ndarray, timestamp: Optional[float] = None) -> AnalysisResult:
         """
         Input: landmarks (Array 17x3 di YOLO: [x, y, conf])
         Output: AnalysisResult

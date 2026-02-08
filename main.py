@@ -59,7 +59,10 @@ def main():
         app.run()
     except KeyboardInterrupt:
         print("\nAborted by user.")
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError) as e:
+        # RuntimeError: YOLO/PyTorch issues
+        # OSError: File/camera access issues  
+        # ValueError: Configuration errors
         logging.error(f"Critical Error: {e}", exc_info=True)
         print(f"Critical Error: {e}")
         sys.exit(1)

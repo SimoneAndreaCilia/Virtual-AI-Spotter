@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Any, Tuple, NamedTuple
+from typing import Dict, Any, Tuple, NamedTuple, Optional
 from collections import deque
 import numpy as np
 from src.utils.geometry import calculate_angle
@@ -53,7 +53,7 @@ class Exercise(ABC):
         # Canonical exercise name for database storage
         self.exercise_id: str = ""
 
-    def smooth_landmarks(self, landmarks: np.ndarray, timestamp: float = None) -> np.ndarray:
+    def smooth_landmarks(self, landmarks: np.ndarray, timestamp: Optional[float] = None) -> np.ndarray:
         """
         Applies smoothing to keypoints registered in self.smoothers.
         Returns a copy of the landmarks with filtered (x,y) coordinates.
@@ -136,7 +136,7 @@ class Exercise(ABC):
         return all(predicate(item) for item in recent_history)
 
     @abstractmethod
-    def process_frame(self, landmarks: np.ndarray, timestamp: float = None) -> AnalysisResult:
+    def process_frame(self, landmarks: np.ndarray, timestamp: Optional[float] = None) -> AnalysisResult:
         """
         Takes keypoints (skeleton) and returns the analysis result.
         Optional: timestamp for handling prerecorded videos or lag.

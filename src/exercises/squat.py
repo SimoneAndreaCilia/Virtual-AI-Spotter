@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry
 from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
@@ -42,7 +42,7 @@ class Squat(Exercise):
         # Future-proof: Add depth verification or specific squat rules here?
         # self.feedback.add_rule(condition=..., message_key="squat_too_shallow")
 
-    def process_frame(self, landmarks: np.ndarray, timestamp: float = None) -> AnalysisResult:
+    def process_frame(self, landmarks: np.ndarray, timestamp: Optional[float] = None) -> AnalysisResult:
         """
         Input: landmarks (Array 17x3 di YOLO: [x, y, conf])
         Output: AnalysisResult
