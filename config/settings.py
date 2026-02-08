@@ -1,20 +1,47 @@
 import os
+from typing import Any
+
+
+# --- 0. HELPER FUNCTIONS ---
+def _get_env(key: str, default: Any, cast_type=str) -> Any:
+    """Get environment variable with type casting and fallback."""
+    value = os.environ.get(key)
+    if value is None:
+        return default
+    try:
+        return cast_type(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def _detect_device() -> str:
+    """Auto-detect best available compute device."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            return "cuda"
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            return "mps"
+    except ImportError:
+        pass
+    return "cpu"
+
 
 # --- 1. PATH CONFIGURATION ---
 # Dynamically calculate project root to avoid "File not found" errors
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Absolute paths to resources
+# Absolute paths to resources (with env var overrides)
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 MODELS_DIR = os.path.join(ASSETS_DIR, "models")
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
-DB_PATH = os.path.join(BASE_DIR, "src", "data", "gym_data.db")
+DB_PATH = _get_env("SPOTTER_DB_PATH", os.path.join(BASE_DIR, "src", "data", "gym_data.db"))
 
 # --- 2. AI & MODEL CONFIGURATION ---
 MODEL_NAME = "yolov8n-pose.pt"  # Nano model (faster) or 'yolov8s-pose.pt' (more accurate)
 MODEL_PATH = os.path.join(MODELS_DIR, MODEL_NAME)
 CONFIDENCE_THRESHOLD = 0.5     # Ignore detections with confidence < 50%
-DEVICE = "cuda"                # Use "cpu" if no NVIDIA GPU, "cuda" or "mps" (Mac)
+DEVICE = _get_env("SPOTTER_DEVICE", _detect_device())  # Auto-detect: cuda/mps/cpu
 
 # --- 3. CAMERA CONFIGURATION ---
 CAMERA_ID = 0           # 0 for integrated webcam, 1 for external
