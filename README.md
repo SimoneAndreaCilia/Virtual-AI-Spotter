@@ -5,7 +5,9 @@
 ![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)
 ![Coverage](https://img.shields.io/badge/Tests-Passing-brightgreen)
 
-> � **Major Update (v2.0)**: The core engine has been refactored for **Production Readiness**. Key improvements include a new FSM-based counting logic, a modular Feedback System, and significant performance optimizations (30+ FPS on CPU).
+> 🚀 **Major Update**: The core engine has been refactored for **Production Readiness**.
+> Full rewrite around **FSM-based counting** (debouncing + hysteresis), a **modular Feedback System**, **One Euro Filter** signal smoothing, and a **pure-math Geometry Engine** (zero NumPy overhead).
+> Architecture highlights: Factory + Registry extensibility, Protocol-based DI, Session Manager with set/rest orchestration, hands-free **Gesture Control**, **i18n** (IT/EN), **SQLite** persistence, and an optimized **HUD** with ROI alpha blending — all validated by a **10-file test suite** running at **30+ FPS on CPU**.
 
 ## Project Overview
 **Virtual AI Spotter** is a real-time Computer Vision assistant designed to act as an intelligent personal trainer. It utilizes state-of-the-art Deep Learning and geometric analysis to provide automatic repetition counting, exercise suggestions, and instant feedback on execution form.
