@@ -123,6 +123,23 @@ class DatabaseManager:
             conn.execute("DELETE FROM exercises WHERE session_id = ?", (session.id,))
             
             for ex in session.exercises:
+                # Prepare details JSON
+                exercise_name = ex.get("name", "Unknown")
+                reps = ex.get("reps", 0)
+                config = ex.get("config", {})
+                
+                details = {
+                    "name": exercise_name,
+                    "set_index": ex.get("set_index", 1),
+                    "reps": reps,
+                    "config": config
+                }
+                
+                # Plank Logic: reps is actually duration
+                if exercise_name.lower() == "plank":
+                     details["duration_seconds"] = reps
+                     details["is_time_based"] = True
+
                 conn.execute(
                     """
                     INSERT INTO exercises (session_id, name, reps, details)
@@ -130,9 +147,9 @@ class DatabaseManager:
                     """,
                     (
                         session.id,
-                        ex.get("name", "Unknown"),
-                        ex.get("reps", 0),
-                        json.dumps(ex)  # Save entire dict as JSON
+                        exercise_name,
+                        reps,
+                        json.dumps(details)  # Save entire dict as JSON
                     )
                 )
             

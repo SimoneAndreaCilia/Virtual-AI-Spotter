@@ -52,6 +52,10 @@ class TestPlank(unittest.TestCase):
         # Initial frame (t=0)
         res = self.plank.process_frame(lm, timestamp=0.0)
         self.assertEqual(res.stage, "countdown")
+        # Logic update: first frame might be 'hold' if just transitioned, or countdown if updated.
+        # Check plank.py: if waiting -> correct -> stage=countdown, feedback=hold. Use next frame for countdown?
+        # Actually in plank.py:
+        # if stage == "waiting": ... stage="countdown", feedback="plank_feedback_hold"
         self.assertEqual(res.correction, "plank_feedback_hold")
         
         # 2. Hold for 2.9s (Still countdown)
@@ -77,6 +81,28 @@ class TestPlank(unittest.TestCase):
         res = self.plank.process_frame(bad_lm, timestamp=9.0)
         self.assertEqual(res.stage, "finished")
         self.assertEqual(res.reps, 5)
+        
+        # PROOF OF BUG/FIX:
+        # The session manager uses self.plank.reps to save data.
+        # We must ensure self.plank.reps is updated to match res.reps
+        self.assertEqual(self.plank.reps, 5, "self.plank.reps should match the duration in seconds")
+
+    def test_long_duration_update(self):
+        # 1. Start & Active
+        lm = self.create_mock_landmarks(body_angle=180, elbow_angle=90)
+        self.plank.process_frame(lm, timestamp=0.0) # wait
+        self.plank.process_frame(lm, timestamp=0.1) # countdown start
+        self.plank.process_frame(lm, timestamp=3.2) # active (3.1s hold)
+        
+        # 2. Simulate 1 minute 5 seconds passing (Total hold = 3.1 + 65 = 68.1)
+        # Active start was at 3.1 (approx). elapsed = timestamp - timer_start
+        # timer_start set at ~3.1. 
+        # Let's say timestamp is now 100.0.
+        res = self.plank.process_frame(lm, timestamp=100.0)
+        
+        expected_duration = int(100.0 - 3.1) # approx 96-97
+        self.assertTrue(res.reps > 60, "Should be more than 1 minute")
+        self.assertEqual(self.plank.reps, res.reps, "Class attribute .reps must sync with result")
 
 if __name__ == '__main__':
     unittest.main()

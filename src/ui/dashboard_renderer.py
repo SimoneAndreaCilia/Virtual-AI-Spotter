@@ -118,7 +118,7 @@ class DashboardRenderer:
             # Plank States
             "waiting": ("plank_state_waiting", COLORS["YELLOW"], "neutral"),
             "countdown": ("plank_state_countdown", COLORS["YELLOW"], "neutral"),
-            "active": ("plank_phase_label", COLORS["GREEN"], "up"), # User requested "Plank Phase" when active
+            "active": ("plank_phase_label", COLORS["GREEN"], "up"), 
             "finished": ("plank_state_finished", COLORS["GREEN"], "neutral"),
             "start": ("state_start", COLORS["WHITE"], "neutral"),
             "unknown": ("state_unknown", COLORS["GRAY"], "neutral")

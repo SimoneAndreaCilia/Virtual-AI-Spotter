@@ -65,10 +65,14 @@ class SessionManager:
             is_time_based = getattr(self.exercise_logic, 'is_time_based', False)
             
             if is_time_based:
-                if stage == "finished":
+                if analysis.stage == "finished": # For Plank, stage becomes finished when form breaks
                      self._complete_set()
+                     # Ensure UI shows finished state immediately
+                     stage = "finished" # Update local stage variable for UIState
             elif analysis.reps >= self.target_reps:
                 self._complete_set()
+                # Force finished state for UI even if logic doesn't have it (for rep based)
+                stage = "finished" # Update local stage variable for UIState
         
         # Gesture Recognition (delegated to injected handler)
         if self.gesture_handler and keypoints is not None:
@@ -82,7 +86,7 @@ class SessionManager:
             target_reps=self.target_reps,
             current_set=self.current_set if self.current_set <= self.target_sets else self.target_sets,
             target_sets=self.target_sets,
-            state=stage,
+            state=stage, # Will now reflect "finished" if set just completed
             feedback_key=feedback,
             workout_state=self.workout_state.value,
             keypoints=keypoints,

@@ -156,6 +156,7 @@ class Plank(Exercise):
         # Return result
         # Reps field holds integers: in this case, full seconds
         total_seconds = int(self.elapsed_time)
+        self.reps = total_seconds
         
         return AnalysisResult(
             reps=total_seconds,
