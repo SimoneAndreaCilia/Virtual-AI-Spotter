@@ -67,7 +67,8 @@ class Visualizer:
             current_set=state.current_set,
             target_sets=state.target_sets,
             state=state.state,
-            feedback_key=state.feedback_key
+            feedback_key=state.feedback_key,
+            is_time_based=state.is_time_based
         )
         
         # Draw overlays for REST/FINISHED states

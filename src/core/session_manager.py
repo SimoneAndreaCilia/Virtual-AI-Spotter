@@ -60,14 +60,31 @@ class SessionManager:
             stage = analysis.stage
             
             # Check Set Completion
-            if analysis.reps >= self.target_reps:
+            # For Rep-based: reps >= target
+            # For Time-based: stage == "finished" (form broken or time elapsed) or other logic
+            is_time_based = getattr(self.exercise_logic, 'is_time_based', False)
+            
+            if is_time_based:
+                if analysis.stage == "finished": # For Plank, stage becomes finished when form breaks
+                     self._complete_set()
+                     # Ensure UI shows finished state immediately
+                     stage = "finished" # Update local stage variable for UIState
+            elif analysis.reps >= self.target_reps:
                 self._complete_set()
+                # Force finished state for UI even if logic doesn't have it (for rep based)
+                stage = "finished" # Update local stage variable for UIState
         
         # Gesture Recognition (delegated to injected handler)
+        action = None
         if self.gesture_handler and keypoints is not None:
             action = self.gesture_handler.process(keypoints, self.workout_state.value)
             if action:
                 self.handle_user_input(action)
+
+        # Force state to "finished" if we are resting or done
+        # This prevents "Get In Position" from showing during the break
+        if self.workout_state != WorkoutState.EXERCISE:
+            stage = "finished"
 
         return UIState(
             exercise_name=i18n.get(self.exercise_logic.display_name_key),
@@ -75,10 +92,11 @@ class SessionManager:
             target_reps=self.target_reps,
             current_set=self.current_set if self.current_set <= self.target_sets else self.target_sets,
             target_sets=self.target_sets,
-            state=stage,
+            state=stage, 
             feedback_key=feedback,
             workout_state=self.workout_state.value,
-            keypoints=keypoints
+            keypoints=keypoints,
+            is_time_based=getattr(self.exercise_logic, 'is_time_based', False)
         )
 
     def _complete_set(self) -> None:

@@ -15,6 +15,7 @@ To add a new exercise:
 from src.exercises.curl import BicepCurl
 from src.exercises.squat import Squat
 from src.exercises.pushup import PushUp
+from src.exercises.plank import Plank
 
 # Export for convenience
-__all__ = ["BicepCurl", "Squat", "PushUp"]
+__all__ = ["BicepCurl", "Squat", "PushUp", "Plank"]
