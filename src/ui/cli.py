@@ -52,6 +52,7 @@ class CLI:
         print(" 1. Bicep Curl")
         print(" 2. Squat")
         print(" 3. Push Up")
+        print(" 4. Plank")
         
         ex_choice = input(f"\n{i18n.get('ui_quit')} ({i18n.get('ui_select_ex')}): ").strip()
         
@@ -71,6 +72,9 @@ class CLI:
                 "down_angle": PUSHUP_THRESHOLDS["DOWN_ANGLE"],
                 "form_angle_min": PUSHUP_THRESHOLDS["FORM_ANGLE_MIN"]
             }
+        elif ex_choice == '4':
+            exercise_name = "Plank"
+            config = {} # Thresholds are global constants or can be passed here
         else:
             exercise_name = "Bicep Curl"
             config = {
@@ -98,8 +102,12 @@ class CLI:
             sets_input = input(f" {i18n.get('ui_target_sets')}: ").strip()
             target_sets = int(sets_input) if sets_input else 3
             
-            reps_input = input(f" {i18n.get('ui_target_reps')}: ").strip()
-            target_reps = int(reps_input) if reps_input else 8
+            if exercise_name == "Plank":
+                 target_reps = 0 # Ignored for time-based usually, or means "Max Time"
+                 print(f" {i18n.get('ui_target_reps')} skipped for Plank.")
+            else:
+                reps_input = input(f" {i18n.get('ui_target_reps')}: ").strip()
+                target_reps = int(reps_input) if reps_input else 8
         except ValueError:
             print(" ! Invalid input. Using defaults (3x8).")
             target_sets = 3

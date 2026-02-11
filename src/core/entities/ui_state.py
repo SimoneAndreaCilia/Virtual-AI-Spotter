@@ -19,3 +19,4 @@ class UIState:
     feedback_key: str
     workout_state: str  # "EXERCISE", "REST", "FINISHED"
     keypoints: Any = None
+    is_time_based: bool = False  # New flag for Timer vs Reps

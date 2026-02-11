@@ -21,7 +21,8 @@ class DashboardRenderer:
     """Renders the workout dashboard (HUD) with stats and feedback."""
     
     def draw(self, frame, exercise_name: str, reps: int, target_reps: int,
-             current_set: int, target_sets: int, state: str, feedback_key: str) -> None:
+             current_set: int, target_sets: int, state: str, feedback_key: str,
+             is_time_based: bool = False) -> None:
         """
         Draws the information panel (HUD) with set/rep counts and state.
         
@@ -79,16 +80,27 @@ class DashboardRenderer:
         cv2.putText(frame, set_str, (set_x + 2, y_line2 - 22), font_val, 1.2, COLORS["BLACK"], 4, cv2.LINE_AA)
         cv2.putText(frame, set_str, (set_x, y_line2 - 24), font_val, 1.2, COLORS["YELLOW"], 2, cv2.LINE_AA)
 
-        # --- ROW 3: REPS ---
-        lbl_reps = i18n.get("ui_reps")
+        # --- ROW 3: REPS or TIME ---
+        if is_time_based:
+             lbl_reps = "TIME" # Should be translated ideally
+             # Format seconds to MM:SS
+             minutes = reps // 60
+             seconds = reps % 60
+             reps_str = f"{minutes:02}:{seconds:02}"
+             col_reps = COLORS["WHITE"] 
+        else:
+             lbl_reps = i18n.get("ui_reps")
+             reps_str = f"{reps} / {target_reps}"
+             col_reps = COLORS["GREEN"] if reps >= target_reps else COLORS["WHITE"]
         cv2.putText(frame, lbl_reps, (x1 + 20, y_line3 - 25), font_label, 0.7, COLORS["WHITE"], 1, cv2.LINE_AA)
         
-        reps_str = f"{reps} / {target_reps}"
+        # reps_str is already set above
+        
+        # Calculate position for value
         reps_size = cv2.getTextSize(reps_str, font_val, 1.2, 2)[0]
         reps_x = x2 - 20 - reps_size[0]
         
         cv2.putText(frame, reps_str, (reps_x + 2, y_line3 - 22), font_val, 1.2, COLORS["BLACK"], 4, cv2.LINE_AA)
-        col_reps = COLORS["GREEN"] if reps >= target_reps else COLORS["WHITE"]
         cv2.putText(frame, reps_str, (reps_x, y_line3 - 24), font_val, 1.2, col_reps, 2, cv2.LINE_AA)
 
         # --- ROW 4: STATE ---
@@ -103,6 +115,11 @@ class DashboardRenderer:
             "squat_down": ("squat_state_down", (0, 165, 255), "down"),
             "pushup_up": ("pushup_state_up", COLORS["GREEN"], "up"),
             "pushup_down": ("pushup_state_down", (0, 165, 255), "down"),
+            # Plank States
+            "waiting": ("plank_state_waiting", COLORS["YELLOW"], "neutral"),
+            "countdown": ("plank_state_countdown", COLORS["YELLOW"], "neutral"),
+            "active": ("plank_phase_label", COLORS["GREEN"], "up"), # User requested "Plank Phase" when active
+            "finished": ("plank_state_finished", COLORS["GREEN"], "neutral"),
             "start": ("state_start", COLORS["WHITE"], "neutral"),
             "unknown": ("state_unknown", COLORS["GRAY"], "neutral")
         }

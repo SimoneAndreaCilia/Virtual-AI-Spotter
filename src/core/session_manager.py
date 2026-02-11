@@ -60,7 +60,14 @@ class SessionManager:
             stage = analysis.stage
             
             # Check Set Completion
-            if analysis.reps >= self.target_reps:
+            # For Rep-based: reps >= target
+            # For Time-based: stage == "finished" (form broken or time elapsed) or other logic
+            is_time_based = getattr(self.exercise_logic, 'is_time_based', False)
+            
+            if is_time_based:
+                if stage == "finished":
+                     self._complete_set()
+            elif analysis.reps >= self.target_reps:
                 self._complete_set()
         
         # Gesture Recognition (delegated to injected handler)
@@ -78,7 +85,8 @@ class SessionManager:
             state=stage,
             feedback_key=feedback,
             workout_state=self.workout_state.value,
-            keypoints=keypoints
+            keypoints=keypoints,
+            is_time_based=getattr(self.exercise_logic, 'is_time_based', False)
         )
 
     def _complete_set(self) -> None:

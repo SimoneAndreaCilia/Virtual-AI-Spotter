@@ -73,6 +73,14 @@ PUSHUP_THRESHOLDS = {
     "FORM_ANGLE_MIN": 160  # Body line tolerance (approx 180 is straight)
 }
 
+# Plank Parameters
+PLANK_THRESHOLDS = {
+    "SHOULDER_HIP_ANKLE_MIN": 160, # Body straightness
+    "ELBOW_ANGLE_MIN": 70,         # Forearms on ground/bent
+    "ELBOW_ANGLE_MAX": 110,
+    "STABILITY_DURATION": 3        # Seconds to hold before starting timer
+}
+
 # Smoothing Parameters (Data Structures)
 BUFFER_SIZE = 10           # Number of frames for moving average (reduces jitter)
 HYSTERESIS_TOLERANCE = 5   # Tolerance (degrees) for state change debouncing (e.g., +5/-5)
