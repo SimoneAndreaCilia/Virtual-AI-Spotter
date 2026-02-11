@@ -75,10 +75,16 @@ class SessionManager:
                 stage = "finished" # Update local stage variable for UIState
         
         # Gesture Recognition (delegated to injected handler)
+        action = None
         if self.gesture_handler and keypoints is not None:
             action = self.gesture_handler.process(keypoints, self.workout_state.value)
             if action:
                 self.handle_user_input(action)
+
+        # Force state to "finished" if we are resting or done
+        # This prevents "Get In Position" from showing during the break
+        if self.workout_state != WorkoutState.EXERCISE:
+            stage = "finished"
 
         return UIState(
             exercise_name=i18n.get(self.exercise_logic.display_name_key),
@@ -86,7 +92,7 @@ class SessionManager:
             target_reps=self.target_reps,
             current_set=self.current_set if self.current_set <= self.target_sets else self.target_sets,
             target_sets=self.target_sets,
-            state=stage, # Will now reflect "finished" if set just completed
+            state=stage, 
             feedback_key=feedback,
             workout_state=self.workout_state.value,
             keypoints=keypoints,
