@@ -16,6 +16,7 @@ from src.core.config_types import AppConfig
 from config.settings import LOGS_DIR, SHOW_FPS, FRAME_SKIP, GESTURE_ENABLED, GESTURE_STABILITY, GESTURE_CONFIDENCE
 from config.translation_strings import i18n
 from src.core.interfaces import VideoSource
+from src.core.exceptions import SpotterError
 from src.core.protocols import PoseDetector, DatabaseManagerProtocol as DBManager
 from src.core.session_manager import SessionManager
 from src.core.factory import ExerciseFactory
@@ -188,7 +189,7 @@ class SpotterApp:
                     # Optional: wait for user to quit after finish
                     pass
 
-        except Exception as e:
+        except (SpotterError, cv2.error) as e:
             logging.critical(f"Critical Error in Main Loop: {e}", exc_info=True)
         finally:
             self._cleanup()

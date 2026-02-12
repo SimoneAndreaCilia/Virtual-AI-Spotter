@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from typing import Tuple
 from src.core.interfaces import VideoSource
+from src.core.exceptions import VideoSourceError
 from config.settings import CAMERA_ID, FRAME_WIDTH, FRAME_HEIGHT
 
 class WebcamSource(VideoSource):
@@ -16,7 +17,7 @@ class WebcamSource(VideoSource):
         
         # Immediate check if camera is accessible
         if not self.cap.isOpened():
-            raise ValueError(f"Unable to open webcam with index {source_index}")
+            raise VideoSourceError(f"Unable to open webcam with index {source_index}")
 
     def get_frame(self) -> Tuple[bool, np.ndarray]:
         """
