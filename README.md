@@ -7,7 +7,7 @@
 
 > 🚀 **Major Update**: The core engine has been refactored for **Production Readiness**.
 > Full rewrite around **FSM-based counting** (debouncing + hysteresis), a **modular Feedback System**, **One Euro Filter** signal smoothing, and a **pure-math Geometry Engine** (zero NumPy overhead).
-> Architecture highlights: Factory + Registry extensibility, Protocol-based DI, Session Manager with set/rest orchestration, hands-free **Gesture Control**, **i18n** (IT/EN), **SQLite** persistence, and an optimized **HUD** with ROI alpha blending — all validated by a **10-file test suite** running at **30+ FPS on CPU**.
+> Architecture highlights: Factory + Registry extensibility, Protocol-based DI, Session Manager with set/rest orchestration, hands-free **Gesture Control**, **i18n** (IT/EN), **SQLite** persistence, and an optimized **HUD** with ROI alpha blending — all validated by a **136-test suite** running at **30+ FPS on CPU**.
 
 ## Project Overview
 **Virtual AI Spotter** is a real-time Computer Vision assistant designed to act as an intelligent personal trainer. It utilizes state-of-the-art Deep Learning and geometric analysis to provide automatic repetition counting, exercise suggestions, and instant feedback on execution form.
@@ -49,8 +49,8 @@ The initial release focuses on 4 fundamental exercises that test different aspec
     *   *Feedback*: Full extension check.
 
 4.  **Plank (Static Core)**
-    *   *Focus*: Maintaining a straight line (Shoulder-Hip-Knee alignment).
-    *   *Status*: In Development.
+    *   *Focus*: Maintaining a straight line (Shoulder-Hip-Ankle alignment).
+    *   *Logic*: `StaticDurationCounter` FSM with countdown, active timer, and form break detection.
 
 ## System Architecture
 
@@ -142,7 +142,7 @@ Presentation layer with separated rendering responsibilities:
 
 ### 6. Quality Assurance
 
-*   **Unit Tests** (`tests/`): 16 test files covering FSM, Geometry, SessionManager, Gesture Detection, DI mocks.
+*   **Test Suite** (`tests/`): 136 automated tests across 13 test files — FSM, Geometry, SessionManager, Gesture Detection, DI mocks, exercise integration, and state display coverage.
 *   **Verification Scripts**: Manual validation tools for debouncing, i18n, refactoring.
 
 ---
@@ -170,6 +170,8 @@ Presentation layer with separated rendering responsibilities:
 │   │   │   ├── 🐍 user.py
 │   │   │   └── 🐍 workout_state.py
 │   │   ├── 🐍 app.py
+│   │   ├── 🐍 config_types.py
+│   │   ├── 🐍 exceptions.py
 │   │   ├── 🐍 factory.py
 │   │   ├── 🐍 feedback.py
 │   │   ├── 🐍 fsm.py
@@ -184,6 +186,7 @@ Presentation layer with separated rendering responsibilities:
 │   ├── 📁 exercises
 │   │   ├── 🐍 __init__.py
 │   │   ├── 🐍 curl.py
+│   │   ├── 🐍 plank.py
 │   │   ├── 🐍 pushup.py
 │   │   └── 🐍 squat.py
 │   ├── 📁 infrastructure
@@ -210,9 +213,12 @@ Presentation layer with separated rendering responsibilities:
 │   ├── 🐍 test_app_di.py
 │   ├── 🐍 test_db_manual.py
 │   ├── 🐍 test_entities_manual.py
+│   ├── 🐍 test_exercise_integration.py
+│   ├── 🐍 test_exercises.py
 │   ├── 🐍 test_fsm.py
 │   ├── 🐍 test_geometry.py
 │   ├── 🐍 test_gesture.py
+│   ├── 🐍 test_plank.py
 │   ├── 🐍 test_pose_estimator.py
 │   ├── 🐍 test_session_manager.py
 │   ├── 🐍 test_smoothing.py
@@ -246,7 +252,7 @@ Presentation layer with separated rendering responsibilities:
     - [x] Squat (Depth & Form)
     - [x] Push-up (Occlusion handling)
     - [x] Bicep Curl (Inverted Logic)
-    - [ ] Plank (Static stability check)
+    - [x] Plank (Static stability check)
 - [ ] **Cloud & DevOps**
     - [ ] AWS Lambda & DynamoDB implementation details
     - [x] Unit Testing Suite (`tests/`)
