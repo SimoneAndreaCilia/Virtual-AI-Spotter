@@ -22,7 +22,7 @@ class DashboardRenderer:
     
     def draw(self, frame, exercise_name: str, reps: int, target_reps: int,
              current_set: int, target_sets: int, state: str, feedback_key: str,
-             is_time_based: bool = False) -> None:
+             is_time_based: bool = False, state_display=None) -> None:
         """
         Draws the information panel (HUD) with set/rep counts and state.
         
@@ -107,24 +107,15 @@ class DashboardRenderer:
         lbl_state = i18n.get("ui_state")
         cv2.putText(frame, lbl_state, (x1 + 20, y2 - 25), font_label, 0.7, COLORS["WHITE"], 1, cv2.LINE_AA)
 
-        # State mapping
-        state_key_map = {
-            "curl_up": ("curl_state_up", COLORS["GREEN"], "up"),
-            "curl_down": ("curl_state_down", (0, 165, 255), "down"),
-            "squat_up": ("squat_state_up", COLORS["GREEN"], "up"),
-            "squat_down": ("squat_state_down", (0, 165, 255), "down"),
-            "pushup_up": ("pushup_state_up", COLORS["GREEN"], "up"),
-            "pushup_down": ("pushup_state_down", (0, 165, 255), "down"),
-            # Plank States
-            "waiting": ("plank_state_waiting", COLORS["YELLOW"], "neutral"),
-            "countdown": ("plank_state_countdown", COLORS["YELLOW"], "neutral"),
-            "active": ("plank_phase_label", COLORS["GREEN"], "up"), 
-            "finished": ("plank_state_finished", COLORS["GREEN"], "neutral"),
-            "start": ("state_start", COLORS["WHITE"], "neutral"),
-            "unknown": ("state_unknown", COLORS["GRAY"], "neutral")
-        }
-        
-        tr_key, state_color, _ = state_key_map.get(state, ("state_unknown", COLORS["GRAY"], "neutral"))
+        # State display: use injected display info (OCP-compliant)
+        if state_display:
+            tr_key = state_display.label_key
+            state_color = state_display.color
+        else:
+            # Fallback for direct calls without state_display (backward compat)
+            tr_key = "state_unknown"
+            state_color = COLORS["GRAY"]
+
         state_text = i18n.get(tr_key)
         if state_text.startswith("MISSING"):
             state_text = state.upper()

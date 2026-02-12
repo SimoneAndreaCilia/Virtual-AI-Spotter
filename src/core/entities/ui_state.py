@@ -4,7 +4,7 @@ UIState dataclass - represents the current state of the UI for rendering.
 This is passed from SessionManager to Visualizer each frame.
 """
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 
 @dataclass
@@ -20,3 +20,5 @@ class UIState:
     workout_state: str  # "EXERCISE", "REST", "FINISHED"
     keypoints: Any = None
     is_time_based: bool = False  # New flag for Timer vs Reps
+    state_display: Any = None    # StateDisplayInfo from Exercise (OCP)
+

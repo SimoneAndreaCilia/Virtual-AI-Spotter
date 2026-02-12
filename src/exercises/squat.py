@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Dict, Any, Optional
-from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry
+from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry, StateDisplayInfo
 from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
@@ -41,6 +41,14 @@ class Squat(Exercise):
         
         # Future-proof: Add depth verification or specific squat rules here?
         # self.feedback.add_rule(condition=..., message_key="squat_too_shallow")
+
+    def get_state_display(self, state: str) -> StateDisplayInfo:
+        """Returns display metadata for squat-specific states."""
+        _map = {
+            "squat_up": StateDisplayInfo("squat_state_up", (0, 255, 0), "up"),
+            "squat_down": StateDisplayInfo("squat_state_down", (0, 165, 255), "down"),
+        }
+        return _map.get(state, super().get_state_display(state))
 
     def process_frame(self, landmarks: np.ndarray, timestamp: Optional[float] = None) -> AnalysisResult:
         """
