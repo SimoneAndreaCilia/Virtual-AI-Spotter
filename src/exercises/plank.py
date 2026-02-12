@@ -3,6 +3,7 @@ import numpy as np
 from typing import Dict, Any, Optional
 from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry, StateDisplayInfo
 from src.core.registry import register_exercise
+from src.core.fsm import StaticDurationCounter
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
 from src.core.feedback import FeedbackSystem
@@ -16,18 +17,11 @@ class Plank(Exercise):
         self.exercise_id = "Plank"
         self.is_time_based = True  # Flag for UI to show Timer instead of Reps
         
-        # State machine for Plank
-        # Stages: "waiting" -> "countdown" -> "active" -> "finished"
+        # Delegate FSM to StaticDurationCounter (same pattern as Curl/Squat → RepetitionCounter)
+        self.fsm = StaticDurationCounter(
+            stability_duration=config.get("stability_duration", PLANK_THRESHOLDS["STABILITY_DURATION"])
+        )
         self.stage = "waiting"
-        
-        # Timer variables
-        self.start_hold_time: Optional[float] = None
-        self.timer_start_time: Optional[float] = None
-        self.elapsed_time: float = 0.0
-        self.last_valid_frame_time: float = 0.0
-        
-        # Stability check for countdown
-        self.stability_duration = config.get("stability_duration", PLANK_THRESHOLDS["STABILITY_DURATION"])
         
         self.side = "left" # Default to left view for plank usually, but can be configured
         if config.get("side"):
@@ -104,69 +98,22 @@ class Plank(Exercise):
         
         is_valid_pose = (body_angle is not None and elbow_angle is not None)
         
-        current_feedback = "plank_feedback_get_ready"
         is_form_correct = False
         
         if is_valid_pose:
             # Check thresholds
             body_ok = body_angle >= PLANK_THRESHOLDS["SHOULDER_HIP_ANKLE_MIN"]
             elbow_ok = (PLANK_THRESHOLDS["ELBOW_ANGLE_MIN"] <= elbow_angle <= PLANK_THRESHOLDS["ELBOW_ANGLE_MAX"])
-            
             is_form_correct = body_ok and elbow_ok
-            
-            # Update Feedback System
-            ctx = {"body_angle": body_angle, "elbow_angle": elbow_angle}
-            correction, _ = self.feedback.check(ctx)
-            if correction != "feedback_perfect" and not is_form_correct:
-                 curr_feedback = correction
-            else:
-                 current_feedback = "plank_feedback_hold"
-        else:
-             current_feedback = "err_body_not_visible"
 
-        # State Machine
-        if self.stage == "waiting":
-            if is_form_correct:
-                self.stage = "countdown"
-                self.start_hold_time = timestamp
-                current_feedback = "plank_feedback_hold"
-            else:
-                self.start_hold_time = None
-                current_feedback = "plank_feedback_get_ready"
-                
-        elif self.stage == "countdown":
-            if is_form_correct:
-                hold_time = timestamp - self.start_hold_time
-                if hold_time >= self.stability_duration:
-                    self.stage = "active"
-                    self.timer_start_time = timestamp
-                    self.elapsed_time = 0
-                    current_feedback = "plank_feedback_stay_still"
-                else:
-                    remaining = int(self.stability_duration - hold_time)
-                    current_feedback = f"plank_countdown_{remaining+1}"
-            else:
-                self.stage = "waiting" # Reset if form broke during countdown
-                
-        elif self.stage == "active":
-            if is_form_correct:
-                self.elapsed_time = timestamp - self.timer_start_time
-                self.last_valid_frame_time = timestamp
-                current_feedback = "plank_feedback_stay_still"
-            else:
-                # Tolerance: How long can we lose form before stopping?
-                # For now, immediate stop or maybe 1s grace period?
-                # Let's do immediate stop for simplicity as per requirements "quando ti sposti... si blocca"
-                self.stage = "finished" 
-
-        elif self.stage == "finished":
-            current_feedback = "plank_feedback_done"
-            # Timer effectively stopped at last valid time
-
-        # Return result
-        # Reps field holds integers: in this case, full seconds
-        total_seconds = int(self.elapsed_time)
+        # Delegate state machine to StaticDurationCounter
+        total_seconds, self.stage = self.fsm.process(is_form_correct, timestamp)
         self.reps = total_seconds
+
+        # Feedback (exercise-specific, not FSM-level)
+        current_feedback = self._resolve_feedback(
+            is_valid_pose, is_form_correct, body_angle, elbow_angle
+        )
         
         return AnalysisResult(
             reps=total_seconds,
@@ -176,9 +123,35 @@ class Plank(Exercise):
             is_valid=is_form_correct
         )
 
+    def _resolve_feedback(self, is_valid_pose: bool, is_form_correct: bool,
+                          body_angle: Optional[float], elbow_angle: Optional[float]) -> str:
+        """Determines the appropriate feedback key based on current state and form."""
+        if self.stage == "finished":
+            return "plank_feedback_done"
+        
+        if not is_valid_pose:
+            return "err_body_not_visible"
+            
+        if self.stage == "waiting":
+            return "plank_feedback_get_ready"
+            
+        if self.stage == "countdown":
+            remaining = self.fsm.countdown_remaining
+            if remaining > 0:
+                return f"plank_countdown_{remaining}"
+            return "plank_feedback_hold"
+            
+        if self.stage == "active":
+            # Check form quality via FeedbackSystem
+            ctx = {"body_angle": body_angle, "elbow_angle": elbow_angle}
+            correction, _ = self.feedback.check(ctx)
+            if correction != "feedback_perfect" and not is_form_correct:
+                return correction
+            return "plank_feedback_stay_still"
+        
+        return "plank_feedback_get_ready"
+
     def reset(self):
         super().reset()
         self.stage = "waiting"
-        self.start_hold_time = None
-        self.timer_start_time = None
-        self.elapsed_time = 0.0
+        self.fsm.reset()
