@@ -7,7 +7,7 @@ Thread-safe design for potential async processing.
 import threading
 from collections import deque
 from enum import Enum
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Optional
 from config.settings import HYSTERESIS_TOLERANCE, FSM_STABILITY_FRAMES
 
 
@@ -135,3 +135,108 @@ class RepetitionCounter:
         self._phase = RepPhase.START
         with self._lock:
             self._history.clear()
+
+
+class HoldPhase(Enum):
+    """
+    Explicit state enum for static hold exercises.
+    
+    Provides type safety for state transitions.
+    """
+    WAITING = "waiting"
+    COUNTDOWN = "countdown"
+    ACTIVE = "active"
+    FINISHED = "finished"
+
+
+class StaticDurationCounter:
+    """
+    FSM for static hold exercises (Plank, Wall Sit, etc.).
+    Sibling to RepetitionCounter — same design patterns, different domain.
+    
+    States: WAITING → COUNTDOWN → ACTIVE → FINISHED
+    - WAITING: No valid form detected yet
+    - COUNTDOWN: Valid form held, waiting for stability_duration to confirm
+    - ACTIVE: Timer running, form is being held
+    - FINISHED: Form broke during active hold (or exercise complete)
+    
+    Thread-safe: Uses lock for state access to support potential async processing.
+    """
+    
+    def __init__(self, stability_duration: float = 3.0):
+        self.stability_duration = stability_duration
+        self._phase = HoldPhase.WAITING
+        self.elapsed_seconds: int = 0
+        
+        # Internal timestamps
+        self._hold_start: Optional[float] = None
+        self._active_start: Optional[float] = None
+        self._elapsed_raw: float = 0.0
+        self._countdown_remaining: int = 0
+        
+        # Thread-safe
+        self._lock = threading.Lock()
+
+    @property
+    def state(self) -> str:
+        """Returns the current state string."""
+        return self._phase.value
+
+    @property
+    def countdown_remaining(self) -> int:
+        """Seconds remaining in countdown (for UI feedback)."""
+        return self._countdown_remaining
+
+    def process(self, is_valid: bool, timestamp: float) -> Tuple[int, str]:
+        """
+        Updates FSM based on form validity.
+        
+        Args:
+            is_valid: Whether the pose/form is currently correct
+            timestamp: Current frame timestamp
+            
+        Returns:
+            Tuple of (elapsed_seconds, state_string)
+        """
+        with self._lock:
+            if self._phase == HoldPhase.WAITING:
+                if is_valid:
+                    self._phase = HoldPhase.COUNTDOWN
+                    self._hold_start = timestamp
+                    
+            elif self._phase == HoldPhase.COUNTDOWN:
+                if is_valid:
+                    hold_time = timestamp - self._hold_start
+                    if hold_time >= self.stability_duration:
+                        self._phase = HoldPhase.ACTIVE
+                        self._active_start = timestamp
+                        self._elapsed_raw = 0.0
+                    else:
+                        self._countdown_remaining = int(self.stability_duration - hold_time) + 1
+                else:
+                    # Form broke during countdown → reset
+                    self._phase = HoldPhase.WAITING
+                    self._hold_start = None
+                    self._countdown_remaining = 0
+                    
+            elif self._phase == HoldPhase.ACTIVE:
+                if is_valid:
+                    self._elapsed_raw = timestamp - self._active_start
+                else:
+                    # Form broke during active hold → finished
+                    self._phase = HoldPhase.FINISHED
+                    
+            # FINISHED: no-op (stays finished until reset)
+            
+            self.elapsed_seconds = int(self._elapsed_raw)
+            return self.elapsed_seconds, self.state
+
+    def reset(self) -> None:
+        """Reset counter state."""
+        with self._lock:
+            self._phase = HoldPhase.WAITING
+            self.elapsed_seconds = 0
+            self._hold_start = None
+            self._active_start = None
+            self._elapsed_raw = 0.0
+            self._countdown_remaining = 0
