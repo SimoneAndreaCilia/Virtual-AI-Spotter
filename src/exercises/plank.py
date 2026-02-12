@@ -1,7 +1,8 @@
 import time
 import numpy as np
-from typing import Dict, Any, Optional
+from typing import Optional
 from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry, StateDisplayInfo
+from src.core.config_types import ExerciseConfig
 from src.core.registry import register_exercise
 from src.core.fsm import StaticDurationCounter
 from src.utils.geometry import calculate_angle
@@ -11,7 +12,7 @@ from config.settings import PLANK_THRESHOLDS, CONFIDENCE_THRESHOLD
 
 @register_exercise("plank")
 class Plank(Exercise):
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: ExerciseConfig):
         super().__init__(config)
         self.display_name_key = "plank_name"
         self.exercise_id = "Plank"

@@ -10,8 +10,9 @@ Adding a new exercise:
 3. Import the exercise in src/exercises/__init__.py
 4. Done! No changes needed to this factory.
 """
-from typing import Dict, Any
+from typing import Dict, Type
 from src.core.interfaces import Exercise
+from src.core.config_types import ExerciseConfig
 from src.core.registry import get_exercise_class, get_available_exercises
 
 # IMPORTANT: Import exercises package to trigger registration
@@ -29,7 +30,7 @@ class ExerciseFactory:
     """
     
     @staticmethod
-    def create_exercise(exercise_type: str, config: Dict[str, Any]) -> Exercise:
+    def create_exercise(exercise_type: str, config: ExerciseConfig) -> Exercise:
         """
         Creates an exercise instance by name.
         

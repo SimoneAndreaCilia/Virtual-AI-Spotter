@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Any, Tuple, NamedTuple, Optional
+from typing import Tuple, NamedTuple, Optional, Dict, Any
 from collections import deque
 import numpy as np
 from src.utils.geometry import calculate_angle
+from src.core.config_types import ExerciseConfig
 
 
 # Memory-efficient history entry (replaces per-frame dict allocation)
@@ -47,7 +48,7 @@ class Exercise(ABC):
 
 
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: ExerciseConfig):
         self.config = config
         self.reps = 0
         self.stage = "start"

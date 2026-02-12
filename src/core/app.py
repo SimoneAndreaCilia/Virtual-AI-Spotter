@@ -9,7 +9,9 @@ Implements Dependency Injection pattern:
 import cv2
 import logging
 import time
-from typing import Optional, Dict, Any
+from typing import Optional
+
+from src.core.config_types import AppConfig
 
 from config.settings import LOGS_DIR, SHOW_FPS, FRAME_SKIP, GESTURE_ENABLED, GESTURE_STABILITY, GESTURE_CONFIDENCE
 from config.translation_strings import i18n
@@ -56,7 +58,7 @@ class SpotterApp:
         video_source: VideoSource,
         pose_detector: PoseDetector,
         db_manager: DBManager,
-        config: Dict[str, Any]
+        config: AppConfig
     ):
         """
         Initialize SpotterApp with injected dependencies.
