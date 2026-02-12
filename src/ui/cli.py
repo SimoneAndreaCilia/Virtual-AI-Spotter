@@ -1,9 +1,10 @@
 from config.settings import SQUAT_THRESHOLDS, PUSHUP_THRESHOLDS, CURL_THRESHOLDS
 from config.translation_strings import i18n
+from src.core.config_types import AppConfig, ExerciseConfig
 
 class CLI:
     @staticmethod
-    def get_initial_config():
+    def get_initial_config() -> AppConfig:
         """
         Orchestrates the initial CLI setup sequence.
         Returns a dict with all necessary config.

@@ -1,7 +1,8 @@
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
+from src.core.config_types import ExerciseRecord
 
 @dataclass
 class Session:
@@ -12,7 +13,7 @@ class Session:
     start_time: datetime = field(default_factory=datetime.now)
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     end_time: Optional[datetime] = None
-    exercises: List[Dict[str, Any]] = field(default_factory=list)
+    exercises: List[ExerciseRecord] = field(default_factory=list)
     # [NEW] Session goals
     target_sets: int = 3
     target_reps: int = 8
@@ -25,6 +26,6 @@ class Session:
         """Ends the session by setting the end time."""
         self.end_time = datetime.now()
 
-    def add_exercise(self, exercise_data: Dict[str, Any]):
+    def add_exercise(self, exercise_data: ExerciseRecord):
         """Adds exercise data to the session."""
         self.exercises.append(exercise_data)

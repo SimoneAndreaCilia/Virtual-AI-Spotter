@@ -1,17 +1,18 @@
 import numpy as np
-from typing import Dict, Any, List, Optional
+from typing import Optional
 from src.core.interfaces import Exercise, AnalysisResult, PushUpHistoryEntry, StateDisplayInfo
+from src.core.config_types import ExerciseConfig
 from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
 from src.core.fsm import RepetitionCounter
 from src.core.feedback import FeedbackSystem
-from config.settings import CONFIDENCE_THRESHOLD, PUSHUP_THRESHOLDS
+from config.settings import PUSHUP_THRESHOLDS, CONFIDENCE_THRESHOLD
 
 
 @register_exercise("pushup")
 class PushUp(Exercise):
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: ExerciseConfig):
         super().__init__(config)
         
         self.display_name_key = "pushup_name"
