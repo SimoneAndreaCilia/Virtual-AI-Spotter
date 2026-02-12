@@ -7,7 +7,7 @@
 
 > 🚀 **Major Update**: The core engine has been refactored for **Production Readiness**.
 > Full rewrite around **FSM-based counting** (debouncing + hysteresis), a **modular Feedback System**, **One Euro Filter** signal smoothing, and a **pure-math Geometry Engine** (zero NumPy overhead).
-> Architecture highlights: Factory + Registry extensibility, Protocol-based DI, Session Manager with set/rest orchestration, hands-free **Gesture Control**, **i18n** (IT/EN), **SQLite** persistence, and an optimized **HUD** with ROI alpha blending — all validated by a **10-file test suite** running at **30+ FPS on CPU**.
+> Architecture highlights: Factory + Registry extensibility, Protocol-based DI, Session Manager with set/rest orchestration, hands-free **Gesture Control**, **i18n** (IT/EN), **SQLite** persistence, and an optimized **HUD** with ROI alpha blending — all validated by a **136-test suite** running at **30+ FPS on CPU**.
 
 ## Project Overview
 **Virtual AI Spotter** is a real-time Computer Vision assistant designed to act as an intelligent personal trainer. It utilizes state-of-the-art Deep Learning and geometric analysis to provide automatic repetition counting, exercise suggestions, and instant feedback on execution form.
@@ -49,8 +49,8 @@ The initial release focuses on 4 fundamental exercises that test different aspec
     *   *Feedback*: Full extension check.
 
 4.  **Plank (Static Core)**
-    *   *Focus*: Maintaining a straight line (Shoulder-Hip-Knee alignment).
-    *   *Status*: In Development.
+    *   *Focus*: Maintaining a straight line (Shoulder-Hip-Ankle alignment).
+    *   *Logic*: `StaticDurationCounter` FSM with countdown, active timer, and form break detection.
 
 ## System Architecture
 
@@ -142,7 +142,7 @@ Presentation layer with separated rendering responsibilities:
 
 ### 6. Quality Assurance
 
-*   **Unit Tests** (`tests/`): 16 test files covering FSM, Geometry, SessionManager, Gesture Detection, DI mocks.
+*   **Test Suite** (`tests/`): 136 automated tests across 13 test files — FSM, Geometry, SessionManager, Gesture Detection, DI mocks, exercise integration, and state display coverage.
 *   **Verification Scripts**: Manual validation tools for debouncing, i18n, refactoring.
 
 ---
@@ -152,80 +152,86 @@ Presentation layer with separated rendering responsibilities:
 
 ```
 ├── 📁 .github
-│   └── 📁 workflows
+│   └── 📁 workflows                          # CI/CD pipeline definitions
 ├── 📁 assets
 │   └── 📁 models
-│       └── 📄 yolov8n-pose.pt
+│       └── 📄 yolov8n-pose.pt                 # Pre-trained YOLOv8 pose model
 ├── 📁 config
-│   ├── 🐍 settings.py
-│   └── 🐍 translation_strings.py
+│   ├── 🐍 settings.py                         # Global constants, thresholds, colors
+│   └── 🐍 translation_strings.py              # i18n strings (IT/EN)
 ├── 📁 scripts
-│   ├── 🐍 check_cam.py
-│   └── 🐍 verify_refactor.py
+│   ├── 🐍 check_cam.py                        # Camera connectivity check
+│   └── 🐍 verify_refactor.py                  # Post-refactor sanity checks
 ├── 📁 src
-│   ├── 📁 core
-│   │   ├── 📁 entities
-│   │   │   ├── 🐍 session.py
-│   │   │   ├── 🐍 ui_state.py
-│   │   │   ├── 🐍 user.py
-│   │   │   └── 🐍 workout_state.py
-│   │   ├── 🐍 app.py
-│   │   ├── 🐍 factory.py
-│   │   ├── 🐍 feedback.py
-│   │   ├── 🐍 fsm.py
-│   │   ├── 🐍 gesture_detector.py
-│   │   ├── 🐍 interfaces.py
-│   │   ├── 🐍 protocols.py
-│   │   ├── 🐍 registry.py
-│   │   └── 🐍 session_manager.py
-│   ├── 📁 data
-│   │   ├── 🐍 db_manager.py
-│   │   └── 📄 schema.sql
-│   ├── 📁 exercises
+│   ├── 📁 core                                # Business logic (framework-agnostic)
+│   │   ├── 📁 entities                        # Domain objects (DDD)
+│   │   │   ├── 🐍 session.py                  # Workout session dataclass
+│   │   │   ├── 🐍 ui_state.py                 # Rendering state container
+│   │   │   ├── 🐍 user.py                     # User profile dataclass
+│   │   │   └── 🐍 workout_state.py            # Workout FSM states (ACTIVE/REST/FINISHED)
+│   │   ├── 🐍 app.py                          # Composition root & main loop
+│   │   ├── 🐍 config_types.py                 # TypedDict definitions for configs
+│   │   ├── 🐍 exceptions.py                   # Custom exception hierarchy (SpotterError)
+│   │   ├── 🐍 factory.py                      # Exercise factory (creates instances)
+│   │   ├── 🐍 feedback.py                     # Rule-based form correction engine
+│   │   ├── 🐍 fsm.py                          # RepetitionCounter & StaticDurationCounter
+│   │   ├── 🐍 gesture_detector.py             # Pose-based gesture recognition
+│   │   ├── 🐍 interfaces.py                   # ABCs: Exercise, VideoSource, StateDisplayInfo
+│   │   ├── 🐍 protocols.py                    # DI protocols: PoseDetector, DBManager
+│   │   ├── 🐍 registry.py                     # @register_exercise decorator & registry
+│   │   └── 🐍 session_manager.py              # Set/rest/rep orchestration
+│   ├── 📁 data                                # Persistence layer
+│   │   ├── 🐍 db_manager.py                   # SQLite CRUD operations
+│   │   └── 📄 schema.sql                      # Database schema definition
+│   ├── 📁 exercises                           # Concrete exercise implementations
+│   │   ├── 🐍 __init__.py                     # Auto-imports for registration
+│   │   ├── 🐍 curl.py                         # Bicep Curl (inverted FSM)
+│   │   ├── 🐍 plank.py                        # Plank (static hold timer)
+│   │   ├── 🐍 pushup.py                       # Push-Up (bilateral + form check)
+│   │   └── 🐍 squat.py                        # Squat (standard FSM)
+│   ├── 📁 infrastructure                      # External system adapters
+│   │   ├── 🐍 ai_inference.py                 # YOLO model wrapper (PoseDetector)
+│   │   ├── 🐍 keypoint_extractor.py           # Raw YOLO output → 17×3 arrays
+│   │   └── 🐍 webcam.py                       # OpenCV camera capture (VideoSource)
+│   ├── 📁 ui                                  # Presentation layer
+│   │   ├── 🐍 cli.py                          # Interactive workout setup prompts
+│   │   ├── 🐍 dashboard_renderer.py           # HUD panel (reps, sets, state)
+│   │   ├── 🐍 overlay_renderer.py             # Full-screen REST/FINISHED overlays
+│   │   ├── 🐍 skeleton_renderer.py            # Pose skeleton & angle arcs
+│   │   └── 🐍 visualizer.py                   # Renderer facade (delegates to above)
+│   └── 📁 utils                               # Signal processing utilities
+│       ├── 🐍 geometry.py                     # Pure-math angle calculations
+│       ├── 🐍 performance.py                  # FPS counter & timing helpers
+│       └── 🐍 smoothing.py                    # One Euro Filter for jitter reduction
+├── 📁 tests                                   # Automated test suite (136 tests)
+│   ├── 📁 mocks                               # Test doubles
 │   │   ├── 🐍 __init__.py
-│   │   ├── 🐍 curl.py
-│   │   ├── 🐍 pushup.py
-│   │   └── 🐍 squat.py
-│   ├── 📁 infrastructure
-│   │   ├── 🐍 ai_inference.py
-│   │   ├── 🐍 keypoint_extractor.py
-│   │   └── 🐍 webcam.py
-│   ├── 📁 ui
-│   │   ├── 🐍 cli.py
-│   │   ├── 🐍 dashboard_renderer.py
-│   │   ├── 🐍 overlay_renderer.py
-│   │   ├── 🐍 skeleton_renderer.py
-│   │   └── 🐍 visualizer.py
-│   └── 📁 utils
-│       ├── 🐍 geometry.py
-│       ├── 🐍 performance.py
-│       └── 🐍 smoothing.py
-├── 📁 tests
-│   ├── 📁 mocks
-│   │   ├── 🐍 __init__.py
-│   │   ├── 🐍 mock_pose.py
-│   │   └── 🐍 mock_video.py
+│   │   ├── 🐍 mock_pose.py                    # Fake PoseDetector for DI tests
+│   │   └── 🐍 mock_video.py                   # Fake VideoSource for DI tests
 │   ├── 🐍 __init__.py
-│   ├── 🐍 helpers.py
-│   ├── 🐍 test_app_di.py
-│   ├── 🐍 test_db_manual.py
-│   ├── 🐍 test_entities_manual.py
-│   ├── 🐍 test_fsm.py
-│   ├── 🐍 test_geometry.py
-│   ├── 🐍 test_gesture.py
-│   ├── 🐍 test_pose_estimator.py
-│   ├── 🐍 test_session_manager.py
-│   ├── 🐍 test_smoothing.py
-│   ├── 🐍 test_visualizer.py
-│   ├── 🐍 verify_debouncing.py
-│   ├── 🐍 verify_features.py
-│   ├── 🐍 verify_i18n.py
-│   └── 🐍 verify_refactor.py
+│   ├── 🐍 helpers.py                          # Shared fixtures (UIState, dummy frames)
+│   ├── 🐍 test_app_di.py                      # Dependency injection wiring tests
+│   ├── 🐍 test_db_manual.py                   # SQLite persistence tests
+│   ├── 🐍 test_entities_manual.py             # Domain entity tests
+│   ├── 🐍 test_exercise_integration.py        # End-to-end rep counting & form feedback
+│   ├── 🐍 test_exercises.py                   # Exercise process_frame unit tests
+│   ├── 🐍 test_fsm.py                         # FSM state transitions & debouncing
+│   ├── 🐍 test_geometry.py                    # Angle calculation edge cases
+│   ├── 🐍 test_gesture.py                     # Gesture recognition tests
+│   ├── 🐍 test_plank.py                       # Plank lifecycle & timer tests
+│   ├── 🐍 test_pose_estimator.py              # PoseEstimator protocol tests
+│   ├── 🐍 test_session_manager.py             # Workout flow & state transitions
+│   ├── 🐍 test_smoothing.py                   # One Euro Filter convergence tests
+│   ├── 🐍 test_visualizer.py                  # Renderer + state display mapping tests
+│   ├── 🐍 verify_debouncing.py                # Manual debouncing validation
+│   ├── 🐍 verify_features.py                  # Manual feature smoke tests
+│   ├── 🐍 verify_i18n.py                      # Manual i18n string verification
+│   └── 🐍 verify_refactor.py                  # Manual refactor validation
 ├── ⚙️ .gitignore
-├── 📄 LICENSE
+├── 📄 LICENSE                                  # AGPL v3
 ├── 📝 README.md
-├── 🐍 main.py
-└── 📄 requirements.txt
+├── 🐍 main.py                                 # Application entry point
+└── 📄 requirements.txt                        # Python dependencies
 ```
 
 </details>
@@ -246,7 +252,7 @@ Presentation layer with separated rendering responsibilities:
     - [x] Squat (Depth & Form)
     - [x] Push-up (Occlusion handling)
     - [x] Bicep Curl (Inverted Logic)
-    - [ ] Plank (Static stability check)
+    - [x] Plank (Static stability check)
 - [ ] **Cloud & DevOps**
     - [ ] AWS Lambda & DynamoDB implementation details
     - [x] Unit Testing Suite (`tests/`)
