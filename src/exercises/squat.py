@@ -78,7 +78,7 @@ class Squat(Exercise):
             if angle is not None:
                 valid_angles.append(angle)
 
-        # Se non abbiamo angoli validi
+        # If we don't have valid angles
         if len(valid_angles) < len(sides_to_process):
             return AnalysisResult(
                 reps=self.reps,
