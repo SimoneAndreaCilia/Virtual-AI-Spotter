@@ -244,5 +244,149 @@ class TestVisualizerFacade(unittest.TestCase):
         self.assertNotEqual(self.frame.sum(), original_sum)
 
 
+class TestStateDisplay(unittest.TestCase):
+    """
+    Tests get_state_display() mapping for each exercise.
+    
+    Verifies pure data (label_key, color, category) without rendering.
+    """
+
+    def _assert_valid_display(self, info, expected_key, expected_category):
+        """Shared assertions for any StateDisplayInfo."""
+        from src.core.interfaces import StateDisplayInfo
+        self.assertIsInstance(info, StateDisplayInfo)
+        self.assertEqual(info.label_key, expected_key)
+        self.assertEqual(len(info.color), 3)  # Valid BGR tuple
+        self.assertIn(info.category, ("up", "down", "neutral"))
+        self.assertEqual(info.category, expected_category)
+
+    # --- Base class defaults ---
+
+    def test_base_start(self):
+        from src.exercises.curl import BicepCurl
+        ex = BicepCurl({"side": "right"})
+        info = ex.get_state_display("start")
+        self._assert_valid_display(info, "state_start", "neutral")
+
+    def test_base_finished(self):
+        from src.exercises.curl import BicepCurl
+        ex = BicepCurl({"side": "right"})
+        info = ex.get_state_display("finished")
+        self._assert_valid_display(info, "state_finished", "neutral")
+
+    def test_base_unknown_fallback(self):
+        from src.exercises.curl import BicepCurl
+        ex = BicepCurl({"side": "right"})
+        info = ex.get_state_display("invalid_state_xyz")
+        self._assert_valid_display(info, "state_unknown", "neutral")
+
+    # --- BicepCurl ---
+
+    def test_curl_up(self):
+        from src.exercises.curl import BicepCurl
+        ex = BicepCurl({"side": "right"})
+        info = ex.get_state_display("curl_up")
+        self._assert_valid_display(info, "curl_state_up", "up")
+
+    def test_curl_down(self):
+        from src.exercises.curl import BicepCurl
+        ex = BicepCurl({"side": "right"})
+        info = ex.get_state_display("curl_down")
+        self._assert_valid_display(info, "curl_state_down", "down")
+
+    # --- Squat ---
+
+    def test_squat_up(self):
+        from src.exercises.squat import Squat
+        ex = Squat({"side": "right"})
+        info = ex.get_state_display("squat_up")
+        self._assert_valid_display(info, "squat_state_up", "up")
+
+    def test_squat_down(self):
+        from src.exercises.squat import Squat
+        ex = Squat({"side": "right"})
+        info = ex.get_state_display("squat_down")
+        self._assert_valid_display(info, "squat_state_down", "down")
+
+    # --- PushUp ---
+
+    def test_pushup_up(self):
+        from src.exercises.pushup import PushUp
+        ex = PushUp({"side": "right"})
+        info = ex.get_state_display("pushup_up")
+        self._assert_valid_display(info, "pushup_state_up", "up")
+
+    def test_pushup_down(self):
+        from src.exercises.pushup import PushUp
+        ex = PushUp({"side": "right"})
+        info = ex.get_state_display("pushup_down")
+        self._assert_valid_display(info, "pushup_state_down", "down")
+
+    # --- Plank ---
+
+    def test_plank_waiting(self):
+        from src.exercises.plank import Plank
+        ex = Plank({"side": "left"})
+        info = ex.get_state_display("waiting")
+        self._assert_valid_display(info, "plank_state_waiting", "neutral")
+
+    def test_plank_countdown(self):
+        from src.exercises.plank import Plank
+        ex = Plank({"side": "left"})
+        info = ex.get_state_display("countdown")
+        self._assert_valid_display(info, "plank_state_countdown", "neutral")
+
+    def test_plank_active(self):
+        from src.exercises.plank import Plank
+        ex = Plank({"side": "left"})
+        info = ex.get_state_display("active")
+        self._assert_valid_display(info, "plank_phase_label", "up")
+
+    def test_plank_finished(self):
+        from src.exercises.plank import Plank
+        ex = Plank({"side": "left"})
+        info = ex.get_state_display("finished")
+        self._assert_valid_display(info, "plank_state_finished", "neutral")
+
+
+class TestStateDisplayFlow(unittest.TestCase):
+    """Tests UIState → DashboardRenderer integration with state_display."""
+
+    def setUp(self):
+        self.visualizer = Visualizer()
+        self.frame = create_dummy_frame()
+
+    def test_state_display_injected_into_dashboard(self):
+        """state_display flows from UIState to DashboardRenderer without crash."""
+        from src.exercises.curl import BicepCurl
+        curl = BicepCurl({"side": "right"})
+        display = curl.get_state_display("curl_up")
+
+        state = create_ui_state(
+            exercise_name="Bicep Curl",
+            state="curl_up",
+            state_display=display
+        )
+        original_sum = self.frame.sum()
+
+        result = self.visualizer.draw_dashboard_from_state(self.frame, state)
+
+        self.assertIs(result, self.frame)
+        self.assertNotEqual(self.frame.sum(), original_sum)
+
+    def test_state_display_none_fallback(self):
+        """state_display=None falls back to 'state_unknown' without crash."""
+        state = create_ui_state(
+            state="some_unknown_state",
+            state_display=None
+        )
+        original_sum = self.frame.sum()
+
+        result = self.visualizer.draw_dashboard_from_state(self.frame, state)
+
+        self.assertIs(result, self.frame)
+        self.assertNotEqual(self.frame.sum(), original_sum)
+
+
 if __name__ == "__main__":
     unittest.main()
