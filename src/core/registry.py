@@ -6,6 +6,7 @@ Exercise classes register themselves by importing and using the decorator.
 """
 from typing import Dict, Type, Any, Callable, List
 from src.core.interfaces import Exercise
+from src.core.exceptions import ExerciseNotFoundError
 
 
 # Global registry dictionary
@@ -49,7 +50,7 @@ def get_exercise_class(name: str) -> Type[Exercise]:
     name_lower = name.lower()
     if name_lower not in _exercise_registry:
         available = ", ".join(_exercise_registry.keys())
-        raise ValueError(
+        raise ExerciseNotFoundError(
             f"Exercise '{name}' not registered. Available: [{available}]"
         )
     return _exercise_registry[name_lower]

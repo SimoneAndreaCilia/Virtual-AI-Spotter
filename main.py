@@ -15,6 +15,7 @@ import logging
 
 from config.settings import CAMERA_ID, MODEL_PATH, DEVICE
 from src.core.app import SpotterApp
+from src.core.exceptions import SpotterError
 from src.infrastructure.webcam import WebcamSource
 from src.infrastructure.ai_inference import PoseEstimator
 from src.data.db_manager import DatabaseManager
@@ -59,10 +60,7 @@ def main():
         app.run()
     except KeyboardInterrupt:
         print("\nAborted by user.")
-    except (RuntimeError, OSError, ValueError) as e:
-        # RuntimeError: YOLO/PyTorch issues
-        # OSError: File/camera access issues  
-        # ValueError: Configuration errors
+    except SpotterError as e:
         logging.error(f"Critical Error: {e}", exc_info=True)
         print(f"Critical Error: {e}")
         sys.exit(1)

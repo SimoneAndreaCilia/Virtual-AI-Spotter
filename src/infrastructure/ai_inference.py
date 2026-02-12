@@ -1,6 +1,7 @@
 from ultralytics import YOLO
 import logging
 from typing import Any
+from src.core.exceptions import ModelLoadError
 
 class PoseEstimator:
     def __init__(self, model_path: str, device: str):
@@ -17,7 +18,7 @@ class PoseEstimator:
             logging.info(f"Model loaded on {self.device}")
         except Exception as e:
             logging.error(f"Failed to load model: {e}")
-            raise
+            raise ModelLoadError(f"Failed to load model from {self.model_path}: {e}") from e
 
     def predict(self, frame) -> Any:
         """
