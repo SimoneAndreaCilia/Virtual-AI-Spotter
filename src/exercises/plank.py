@@ -1,7 +1,7 @@
 import time
 import numpy as np
 from typing import Dict, Any, Optional
-from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry
+from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry, StateDisplayInfo
 from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
@@ -58,6 +58,16 @@ class Plank(Exercise):
             message_key="plank_err_hips", # e.g. "Keep hips in line!"
             priority=10
         )
+
+    def get_state_display(self, state: str) -> StateDisplayInfo:
+        """Returns display metadata for plank-specific states."""
+        _map = {
+            "waiting": StateDisplayInfo("plank_state_waiting", (0, 255, 255), "neutral"),
+            "countdown": StateDisplayInfo("plank_state_countdown", (0, 255, 255), "neutral"),
+            "active": StateDisplayInfo("plank_phase_label", (0, 255, 0), "up"),
+            "finished": StateDisplayInfo("plank_state_finished", (0, 255, 0), "neutral"),
+        }
+        return _map.get(state, super().get_state_display(state))
 
     def process_frame(self, landmarks: np.ndarray, timestamp: Optional[float] = None) -> AnalysisResult:
         if timestamp is None:

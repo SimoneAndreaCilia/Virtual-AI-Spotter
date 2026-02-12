@@ -96,7 +96,8 @@ class SessionManager:
             feedback_key=feedback,
             workout_state=self.workout_state.value,
             keypoints=keypoints,
-            is_time_based=getattr(self.exercise_logic, 'is_time_based', False)
+            is_time_based=getattr(self.exercise_logic, 'is_time_based', False),
+            state_display=self.exercise_logic.get_state_display(stage)
         )
 
     def _complete_set(self) -> None:

@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Dict, Any, Tuple, Optional
-from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry
+from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry, StateDisplayInfo
 from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
@@ -50,6 +50,14 @@ class BicepCurl(Exercise):
             message_key="curl_err_flexion",
             priority=5
         )
+
+    def get_state_display(self, state: str) -> StateDisplayInfo:
+        """Returns display metadata for curl-specific states."""
+        _map = {
+            "curl_up": StateDisplayInfo("curl_state_up", (0, 255, 0), "up"),
+            "curl_down": StateDisplayInfo("curl_state_down", (0, 165, 255), "down"),
+        }
+        return _map.get(state, super().get_state_display(state))
 
     def process_frame(self, landmarks: np.ndarray, timestamp: Optional[float] = None) -> AnalysisResult:
         """

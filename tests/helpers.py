@@ -5,7 +5,7 @@ Provides factory functions for creating dummy frames, keypoints, and UI states.
 """
 import numpy as np
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any
 
 
 @dataclass
@@ -20,6 +20,8 @@ class UIState:
     feedback_key: str = ""
     workout_state: str = "ACTIVE"  # ACTIVE, REST, FINISHED
     keypoints: Optional[np.ndarray] = None
+    is_time_based: bool = False
+    state_display: Optional[Any] = None
 
 
 def create_dummy_frame(width: int = 640, height: int = 480) -> np.ndarray:

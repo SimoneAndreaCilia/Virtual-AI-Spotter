@@ -30,6 +30,14 @@ class AnalysisResult:
     angle: float     # Current angle
     is_valid: bool   # Whether form is correct
 
+
+# Display metadata for exercise states (OCP: owned by each Exercise)
+class StateDisplayInfo(NamedTuple):
+    """UI display properties for an exercise state."""
+    label_key: str   # i18n translation key (e.g. "curl_state_up")
+    color: tuple     # BGR color tuple (e.g. (0, 255, 0))
+    category: str    # "up", "down", or "neutral"
+
 class Exercise(ABC):
     """
     Abstract Base Class (Interface).
@@ -134,6 +142,20 @@ class Exercise(ABC):
         recent_history = list(self.history)[-consistency_frames:]
         
         return all(predicate(item) for item in recent_history)
+
+    def get_state_display(self, state: str) -> StateDisplayInfo:
+        """
+        Returns display metadata for a given exercise state.
+        
+        Override in subclasses to provide exercise-specific state displays.
+        Falls back to generic defaults for common states (start, finished, unknown).
+        """
+        _defaults = {
+            "start": StateDisplayInfo("state_start", (255, 255, 255), "neutral"),
+            "finished": StateDisplayInfo("state_finished", (0, 255, 0), "neutral"),
+            "unknown": StateDisplayInfo("state_unknown", (128, 128, 128), "neutral"),
+        }
+        return _defaults.get(state, StateDisplayInfo("state_unknown", (128, 128, 128), "neutral"))
 
     @abstractmethod
     def process_frame(self, landmarks: np.ndarray, timestamp: Optional[float] = None) -> AnalysisResult:

@@ -68,7 +68,8 @@ class Visualizer:
             target_sets=state.target_sets,
             state=state.state,
             feedback_key=state.feedback_key,
-            is_time_based=state.is_time_based
+            is_time_based=state.is_time_based,
+            state_display=getattr(state, 'state_display', None)
         )
         
         # Draw overlays for REST/FINISHED states
