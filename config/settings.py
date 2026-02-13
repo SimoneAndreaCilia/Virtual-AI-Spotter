@@ -94,6 +94,7 @@ FRAME_SKIP = 0             # Skip N frames between AI inference (0 = process eve
 GESTURE_ENABLED = True     # Enable hands-free gesture control
 GESTURE_STABILITY = 10     # Frames gesture must be held to trigger action
 GESTURE_CONFIDENCE = 0.6   # Minimum keypoint confidence for gesture detection
+GESTURE_Y_DIFF_THRESHOLD = 50 # Pixels wrist must be above shoulder for THUMBS_UP
 
 # --- 5. VISUALIZATION (UI) ---
 # Colors in BGR format (Blue, Green, Red) for OpenCV
