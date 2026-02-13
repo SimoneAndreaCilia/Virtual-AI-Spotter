@@ -8,7 +8,7 @@ from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
 from src.core.fsm import RepetitionCounter
 from src.core.feedback import FeedbackSystem
-from config.settings import SQUAT_THRESHOLDS, CONFIDENCE_THRESHOLD
+from config.settings import SQUAT_THRESHOLDS, CONFIDENCE_THRESHOLD, SMOOTHING_MIN_CUTOFF, SMOOTHING_BETA
 
 
 @register_exercise("squat")
@@ -23,13 +23,14 @@ class Squat(RepBasedMixin, Exercise):
         self.side = config.get("side", "right")
 
         # Smoother for critical keypoints (Hips, Knees, Ankles)
+        # Smoother for critical keypoints (Hips, Knees, Ankles)
         self.smoothers = {
-            11: PointSmoother(min_cutoff=0.1, beta=0.05), # L Hip
-            13: PointSmoother(min_cutoff=0.1, beta=0.05), # L Knee
-            15: PointSmoother(min_cutoff=0.1, beta=0.05), # L Ankle
-            12: PointSmoother(min_cutoff=0.1, beta=0.05), # R Hip
-            14: PointSmoother(min_cutoff=0.1, beta=0.05), # R Knee
-            16: PointSmoother(min_cutoff=0.1, beta=0.05), # R Ankle
+            11: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Hip
+            13: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Knee
+            15: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Ankle
+            12: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # R Hip
+            14: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # R Knee
+            16: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # R Ankle
         }
 
         # --- NEW ARCHITECTURE ---

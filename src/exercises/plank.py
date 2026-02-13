@@ -8,7 +8,7 @@ from src.core.fsm import StaticDurationCounter
 from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
 from src.core.feedback import FeedbackSystem
-from config.settings import PLANK_THRESHOLDS, CONFIDENCE_THRESHOLD
+from config.settings import PLANK_THRESHOLDS, CONFIDENCE_THRESHOLD, SMOOTHING_MIN_CUTOFF, SMOOTHING_BETA
 
 @register_exercise("plank")
 class Plank(Exercise):
@@ -31,18 +31,18 @@ class Plank(Exercise):
         # Smoothers
         self.smoothers = {
              # Left side
-            5: PointSmoother(), # L Shoulder
-            7: PointSmoother(), # L Elbow
-            9: PointSmoother(), # L Wrist
-            11: PointSmoother(),# L Hip
-            15: PointSmoother(), # L Ankle
+            5: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Shoulder
+            7: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Elbow
+            9: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Wrist
+            11: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA),# L Hip
+            15: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Ankle
             
             # Right side
-            6: PointSmoother(), # R Shoulder
-            8: PointSmoother(), # R Elbow
-            10: PointSmoother(), # R Wrist
-            12: PointSmoother(), # R Hip
-            16: PointSmoother()  # R Ankle
+            6: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # R Shoulder
+            8: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # R Elbow
+            10: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # R Wrist
+            12: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # R Hip
+            16: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA)  # R Ankle
         }
         
         self.feedback = FeedbackSystem()

@@ -85,6 +85,8 @@ PLANK_THRESHOLDS = {
 BUFFER_SIZE = 10           # Number of frames for moving average (reduces jitter)
 HYSTERESIS_TOLERANCE = 5   # Tolerance (degrees) for state change debouncing (e.g., +5/-5)
 FSM_STABILITY_FRAMES = 2   # Consecutive frames required for state transition
+SMOOTHING_MIN_CUTOFF = 0.1  # Low-pass filter cutoff (lower = smoother but more lag)
+SMOOTHING_BETA = 0.05       # Speed coefficient (higher = less lag during movement)
 
 # --- 4b. PERFORMANCE SETTINGS ---
 SHOW_FPS = True            # Display FPS counter in HUD
@@ -94,6 +96,7 @@ FRAME_SKIP = 0             # Skip N frames between AI inference (0 = process eve
 GESTURE_ENABLED = True     # Enable hands-free gesture control
 GESTURE_STABILITY = 10     # Frames gesture must be held to trigger action
 GESTURE_CONFIDENCE = 0.6   # Minimum keypoint confidence for gesture detection
+GESTURE_Y_DIFF_THRESHOLD = 50 # Pixels wrist must be above shoulder for THUMBS_UP
 
 # --- 5. VISUALIZATION (UI) ---
 # Colors in BGR format (Blue, Green, Red) for OpenCV

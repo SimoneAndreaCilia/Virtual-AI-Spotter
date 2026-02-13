@@ -4,6 +4,7 @@ Finite State Machine for repetition counting.
 Manages the state machine logic with debouncing to avoid false counts.
 Thread-safe design for potential async processing.
 """
+import logging
 import threading
 from collections import deque
 from enum import Enum
@@ -51,8 +52,9 @@ class RepetitionCounter:
         self.reps = 0
         
         # Thread-safe history buffer
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._history: deque = deque(maxlen=5)
+        self._logger = logging.getLogger(f"FSM.Rep.{state_prefix or 'generic'}")
     
     def _parse_phase(self, state_str: str) -> RepPhase:
         """Convert string to RepPhase enum."""
@@ -72,6 +74,16 @@ class RepetitionCounter:
             return f"{self.state_prefix}_{state}"
         return state
 
+    def _transition(self, new_phase: RepPhase, angle: float) -> None:
+        """Applies a phase transition with structured logging."""
+        old_phase = self._phase
+        if old_phase != new_phase:
+            self._phase = new_phase
+            self._logger.debug(
+                "%s -> %s | angle=%.1f | reps=%d",
+                old_phase.value, new_phase.value, angle, self.reps
+            )
+
     def process(self, angle: float) -> Tuple[int, str]:
         """
         Analyzes the new angle and updates the state and reps.
@@ -82,52 +94,51 @@ class RepetitionCounter:
         with self._lock:
             self._history.append(angle)
         
-        if not self.inverted:
-            # --- STANDARD LOGIC (Squat, PushUp) ---
-            # DOWN: Angle decreases (goes below threshold)
-            # UP: Angle increases (goes above threshold)
+            if not self.inverted:
+                # --- STANDARD LOGIC (Squat, PushUp) ---
+                # DOWN: Angle decreases (goes below threshold)
+                # UP: Angle increases (goes above threshold)
+                
+                # DOWN TRANSITION
+                if angle < self.down_threshold + HYSTERESIS_TOLERANCE:
+                    if self._is_stable(lambda a: a < self.down_threshold + HYSTERESIS_TOLERANCE):
+                        self._transition(RepPhase.DOWN, angle)
+                        
+                # UP TRANSITION & COUNT
+                elif angle > self.up_threshold - HYSTERESIS_TOLERANCE:
+                    if self._is_stable(lambda a: a > self.up_threshold - HYSTERESIS_TOLERANCE):
+                        if self._phase == RepPhase.DOWN:
+                            self.reps += 1
+                            self._transition(RepPhase.UP, angle)
+                        elif self._phase == RepPhase.START:
+                            self._transition(RepPhase.UP, angle)
             
-            # DOWN TRANSITION
-            if angle < self.down_threshold + HYSTERESIS_TOLERANCE:
-                if self._is_stable(lambda a: a < self.down_threshold + HYSTERESIS_TOLERANCE):
-                    self._phase = RepPhase.DOWN
-                    
-            # UP TRANSITION & COUNT
-            elif angle > self.up_threshold - HYSTERESIS_TOLERANCE:
-                if self._is_stable(lambda a: a > self.up_threshold - HYSTERESIS_TOLERANCE):
-                    if self._phase == RepPhase.DOWN:
-                        self.reps += 1
-                        self._phase = RepPhase.UP
-                    elif self._phase == RepPhase.START:
-                        self._phase = RepPhase.UP
-        
-        else:
-            # --- INVERTED LOGIC (Bicep Curl) ---
-            # DOWN (Extension): Angle INCREASES (extends arm > 160)
-            # UP (Flexion/Contraction): Angle DECREASES (< 30)
-            
-            # DOWN TRANSITION
-            if angle > self.down_threshold - HYSTERESIS_TOLERANCE:
-                if self._is_stable(lambda a: a > self.down_threshold - HYSTERESIS_TOLERANCE):
-                    self._phase = RepPhase.DOWN
-            
-            # UP TRANSITION & COUNT
-            elif angle < self.up_threshold + HYSTERESIS_TOLERANCE:
-                if self._is_stable(lambda a: a < self.up_threshold + HYSTERESIS_TOLERANCE):
-                    if self._phase == RepPhase.DOWN:
-                        self.reps += 1
-                        self._phase = RepPhase.UP
-                    elif self._phase == RepPhase.START:
-                        self._phase = RepPhase.UP
-            
-        return self.reps, self.state
+            else:
+                # --- INVERTED LOGIC (Bicep Curl) ---
+                # DOWN (Extension): Angle INCREASES (extends arm > 160)
+                # UP (Flexion/Contraction): Angle DECREASES (< 30)
+                
+                # DOWN TRANSITION
+                if angle > self.down_threshold - HYSTERESIS_TOLERANCE:
+                    if self._is_stable(lambda a: a > self.down_threshold - HYSTERESIS_TOLERANCE):
+                        self._transition(RepPhase.DOWN, angle)
+                
+                # UP TRANSITION & COUNT
+                elif angle < self.up_threshold + HYSTERESIS_TOLERANCE:
+                    if self._is_stable(lambda a: a < self.up_threshold + HYSTERESIS_TOLERANCE):
+                        if self._phase == RepPhase.DOWN:
+                            self.reps += 1
+                            self._transition(RepPhase.UP, angle)
+                        elif self._phase == RepPhase.START:
+                            self._transition(RepPhase.UP, angle)
+                
+            return self.reps, self.state
 
     def _is_stable(self, predicate: Callable[[float], bool]) -> bool:
         """Checks if a condition is true for 'stability_frames' consecutive frames."""
-        with self._lock:
-            if len(self._history) < self.stability_frames:
-                return False
-            return all(predicate(x) for x in list(self._history)[-self.stability_frames:])
+        if len(self._history) < self.stability_frames:
+            return False
+        return all(predicate(x) for x in list(self._history)[-self.stability_frames:])
     
     def reset(self) -> None:
         """Reset counter state."""
@@ -175,7 +186,8 @@ class StaticDurationCounter:
         self._countdown_remaining: int = 0
         
         # Thread-safe
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
+        self._logger = logging.getLogger("FSM.Hold")
 
     @property
     def state(self) -> str:
@@ -186,6 +198,18 @@ class StaticDurationCounter:
     def countdown_remaining(self) -> int:
         """Seconds remaining in countdown (for UI feedback)."""
         return self._countdown_remaining
+
+    def _transition(self, new_phase: HoldPhase, **context) -> None:
+        """Applies a phase transition with structured logging."""
+        old_phase = self._phase
+        if old_phase != new_phase:
+            self._phase = new_phase
+            extra = " | ".join(f"{k}={v}" for k, v in context.items()) if context else ""
+            self._logger.debug(
+                "%s -> %s%s",
+                old_phase.value, new_phase.value,
+                f" | {extra}" if extra else ""
+            )
 
     def process(self, is_valid: bool, timestamp: float) -> Tuple[int, str]:
         """
@@ -201,21 +225,21 @@ class StaticDurationCounter:
         with self._lock:
             if self._phase == HoldPhase.WAITING:
                 if is_valid:
-                    self._phase = HoldPhase.COUNTDOWN
+                    self._transition(HoldPhase.COUNTDOWN, t=f"{timestamp:.2f}")
                     self._hold_start = timestamp
                     
             elif self._phase == HoldPhase.COUNTDOWN:
                 if is_valid:
                     hold_time = timestamp - self._hold_start
                     if hold_time >= self.stability_duration:
-                        self._phase = HoldPhase.ACTIVE
+                        self._transition(HoldPhase.ACTIVE, held=f"{hold_time:.1f}s")
                         self._active_start = timestamp
                         self._elapsed_raw = 0.0
                     else:
                         self._countdown_remaining = int(self.stability_duration - hold_time) + 1
                 else:
                     # Form broke during countdown → reset
-                    self._phase = HoldPhase.WAITING
+                    self._transition(HoldPhase.WAITING, reason="form_broke")
                     self._hold_start = None
                     self._countdown_remaining = 0
                     
@@ -224,7 +248,7 @@ class StaticDurationCounter:
                     self._elapsed_raw = timestamp - self._active_start
                 else:
                     # Form broke during active hold → finished
-                    self._phase = HoldPhase.FINISHED
+                    self._transition(HoldPhase.FINISHED, elapsed=f"{self._elapsed_raw:.1f}s")
                     
             # FINISHED: no-op (stays finished until reset)
             

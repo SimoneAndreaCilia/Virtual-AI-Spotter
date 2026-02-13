@@ -9,6 +9,7 @@ Detects simple gestures for hands-free control:
 import numpy as np
 from typing import Optional, Dict, Any
 from collections import deque
+from config.settings import GESTURE_Y_DIFF_THRESHOLD
 
 
 class GestureDetector:
@@ -80,9 +81,9 @@ class GestureDetector:
             
             if (right_wrist[2] > self.confidence_threshold and 
                 right_shoulder[2] > self.confidence_threshold):
-                # Wrist Y is smaller (higher on screen) than shoulder by at least 50 pixels
+                # Wrist Y is smaller (higher on screen) than shoulder by at least N pixels
                 y_diff = right_shoulder[1] - right_wrist[1]
-                if y_diff > 50:  # Wrist is 50+ pixels above shoulder
+                if y_diff > GESTURE_Y_DIFF_THRESHOLD:  # Wrist is significantly above shoulder
                     return "THUMBS_UP"
             
             # Check left side
@@ -92,7 +93,7 @@ class GestureDetector:
             if (left_wrist[2] > self.confidence_threshold and 
                 left_shoulder[2] > self.confidence_threshold):
                 y_diff = left_shoulder[1] - left_wrist[1]
-                if y_diff > 50:
+                if y_diff > GESTURE_Y_DIFF_THRESHOLD:
                     return "THUMBS_UP"
                     
         except (IndexError, TypeError):

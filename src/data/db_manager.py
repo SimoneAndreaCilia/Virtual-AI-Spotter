@@ -5,11 +5,10 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from src.core.entities.user import User
 from src.core.entities.session import Session
+from config.settings import DB_PATH
 
 class DatabaseManager:
-    def __init__(self, db_path: str = "src/data/gym.db", schema_path: str = "src/data/schema.sql"):
-        # Ensure 'src/data' folder exists or path is absolute
-        # If script is run from root, 'src/data/gym.db' works.
+    def __init__(self, db_path: str = DB_PATH, schema_path: str = "src/data/schema.sql"):
         self.db_path = db_path
         self.schema_path = schema_path
         self._init_db()
