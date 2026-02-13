@@ -8,7 +8,7 @@ from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
 from src.core.fsm import RepetitionCounter
 from src.core.feedback import FeedbackSystem
-from config.settings import CURL_THRESHOLDS, CONFIDENCE_THRESHOLD
+from config.settings import CURL_THRESHOLDS, CONFIDENCE_THRESHOLD, SMOOTHING_MIN_CUTOFF, SMOOTHING_BETA
 
 
 @register_exercise("bicep curl")
@@ -22,13 +22,14 @@ class BicepCurl(RepBasedMixin, Exercise):
         self.side = config.get("side", "right")
 
         # Smoother for critical keypoints (Shoulder, Elbow, Wrist for both sides)
+        # Smoother for critical keypoints (Shoulder, Elbow, Wrist for both sides)
         self.smoothers = {
-            5: PointSmoother(min_cutoff=0.1, beta=0.05), # L Shoulder
-            7: PointSmoother(min_cutoff=0.1, beta=0.05), # L Elbow
-            9: PointSmoother(min_cutoff=0.1, beta=0.05), # L Wrist
-            6: PointSmoother(min_cutoff=0.1, beta=0.05), # R Shoulder
-            8: PointSmoother(min_cutoff=0.1, beta=0.05), # R Elbow
-            10: PointSmoother(min_cutoff=0.1, beta=0.05) # R Wrist
+            5: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Shoulder
+            7: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Elbow
+            9: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Wrist
+            6: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # R Shoulder
+            8: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # R Elbow
+            10: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA) # R Wrist
         }
         
         # --- NEW ARCHITECTURE ---

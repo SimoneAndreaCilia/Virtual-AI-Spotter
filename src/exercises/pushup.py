@@ -8,7 +8,7 @@ from src.utils.geometry import calculate_angle
 from src.utils.smoothing import PointSmoother
 from src.core.fsm import RepetitionCounter
 from src.core.feedback import FeedbackSystem
-from config.settings import PUSHUP_THRESHOLDS, CONFIDENCE_THRESHOLD
+from config.settings import PUSHUP_THRESHOLDS, CONFIDENCE_THRESHOLD, SMOOTHING_MIN_CUTOFF, SMOOTHING_BETA
 
 
 @register_exercise("pushup")
@@ -26,18 +26,18 @@ class PushUp(RepBasedMixin, Exercise):
         # Configure smoothers for key joints
         self.smoothers = {
             # Left Side
-            5: PointSmoother(min_cutoff=0.1, beta=0.05),  # L Shoulder
-            7: PointSmoother(min_cutoff=0.1, beta=0.05),  # L Elbow
-            9: PointSmoother(min_cutoff=0.1, beta=0.05),  # L Wrist
-            11: PointSmoother(min_cutoff=0.1, beta=0.05), # L Hip
-            15: PointSmoother(min_cutoff=0.1, beta=0.05), # L Ankle
+            5: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA),  # L Shoulder
+            7: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA),  # L Elbow
+            9: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA),  # L Wrist
+            11: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Hip
+            15: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # L Ankle
             
             # Right Side
-            6: PointSmoother(min_cutoff=0.1, beta=0.05),  # R Shoulder
-            8: PointSmoother(min_cutoff=0.1, beta=0.05),  # R Elbow
-            10: PointSmoother(min_cutoff=0.1, beta=0.05), # R Wrist
-            12: PointSmoother(min_cutoff=0.1, beta=0.05), # R Hip
-            16: PointSmoother(min_cutoff=0.1, beta=0.05)  # R Ankle
+            6: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA),  # R Shoulder
+            8: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA),  # R Elbow
+            10: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # R Wrist
+            12: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA), # R Hip
+            16: PointSmoother(min_cutoff=SMOOTHING_MIN_CUTOFF, beta=SMOOTHING_BETA)  # R Ankle
         }
 
         # --- FSM & Feedback (with defaults from settings) ---
