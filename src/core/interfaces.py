@@ -81,18 +81,6 @@ class Exercise(ABC):
                 
         return smoothed
 
-    def _get_sides_to_process(self) -> list:
-        """
-        Returns list of sides to analyze based on self.side config.
-        
-        Returns:
-            ["left"], ["right"], or ["left", "right"] for "both"
-        """
-        side = getattr(self, 'side', 'right')
-        if side == "both":
-            return ["left", "right"]
-        return [side]
-
     def _calculate_side_angle(
         self,
         landmarks: np.ndarray,
@@ -122,27 +110,6 @@ class Exercise(ABC):
                 smoothed[idx3][:2]
             )
         return None
-
-    def _is_stable_change(self, predicate, consistency_frames: int = 3) -> bool:
-        """
-        Checks if a condition (predicate) has been true for the last N frames.
-        Useful for debouncing (avoiding state changes on spurious frames).
-        
-        Args:
-            predicate: Function that accepts an item from history and returns bool.
-            consistency_frames: Number of consecutive frames required.
-            
-        Returns:
-            bool: True if the condition is stable.
-        """
-        if len(self.history) < consistency_frames:
-            return False
-            
-        # Check the last N elements of history
-        # History is a deque, so we iterate the last N
-        recent_history = list(self.history)[-consistency_frames:]
-        
-        return all(predicate(item) for item in recent_history)
 
     def get_state_display(self, state: str) -> StateDisplayInfo:
         """

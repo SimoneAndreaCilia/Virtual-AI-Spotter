@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Optional
 from src.core.interfaces import Exercise, AnalysisResult, PushUpHistoryEntry, StateDisplayInfo
+from src.core.mixins import RepBasedMixin
 from src.core.config_types import ExerciseConfig
 from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
@@ -11,7 +12,7 @@ from config.settings import PUSHUP_THRESHOLDS, CONFIDENCE_THRESHOLD
 
 
 @register_exercise("pushup")
-class PushUp(Exercise):
+class PushUp(RepBasedMixin, Exercise):
     def __init__(self, config: ExerciseConfig):
         super().__init__(config)
         
