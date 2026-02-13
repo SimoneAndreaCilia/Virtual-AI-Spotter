@@ -1,17 +1,17 @@
 import logging
 from typing import Dict, Any, Optional
 from src.core.interfaces import Exercise
-from src.core.protocols import KeypointExtractor, GestureHandlerProtocol
+from src.core.protocols import KeypointExtractor, GestureHandlerProtocol, DatabaseManagerProtocol
 from src.core.entities.session import Session
 from src.core.entities.ui_state import UIState
 from src.core.entities.workout_state import WorkoutState
 from config.translation_strings import i18n
 
 class SessionManager:
-    def __init__(self, db_manager: Any, user_id: int, exercise: Exercise, 
+    def __init__(self, db_manager: DatabaseManagerProtocol, user_id: int, exercise: Exercise, 
                  keypoint_extractor: KeypointExtractor, target_sets: int, target_reps: int,
                  gesture_handler: Optional[GestureHandlerProtocol] = None):
-        self.db_manager: Any = db_manager
+        self.db_manager: DatabaseManagerProtocol = db_manager
         self.user_id: int = user_id
         
         # Config
