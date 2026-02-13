@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Optional
 from src.core.interfaces import Exercise, AnalysisResult, HistoryEntry, StateDisplayInfo
+from src.core.mixins import RepBasedMixin
 from src.core.config_types import ExerciseConfig
 from src.core.registry import register_exercise
 from src.utils.geometry import calculate_angle
@@ -11,7 +12,7 @@ from config.settings import SQUAT_THRESHOLDS, CONFIDENCE_THRESHOLD
 
 
 @register_exercise("squat")
-class Squat(Exercise):
+class Squat(RepBasedMixin, Exercise):
     def __init__(self, config: ExerciseConfig):
         super().__init__(config)
         
