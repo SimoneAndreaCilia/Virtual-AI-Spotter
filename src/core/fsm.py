@@ -52,7 +52,7 @@ class RepetitionCounter:
         self.reps = 0
         
         # Thread-safe history buffer
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._history: deque = deque(maxlen=5)
         self._logger = logging.getLogger(f"FSM.Rep.{state_prefix or 'generic'}")
     
@@ -94,52 +94,51 @@ class RepetitionCounter:
         with self._lock:
             self._history.append(angle)
         
-        if not self.inverted:
-            # --- STANDARD LOGIC (Squat, PushUp) ---
-            # DOWN: Angle decreases (goes below threshold)
-            # UP: Angle increases (goes above threshold)
+            if not self.inverted:
+                # --- STANDARD LOGIC (Squat, PushUp) ---
+                # DOWN: Angle decreases (goes below threshold)
+                # UP: Angle increases (goes above threshold)
+                
+                # DOWN TRANSITION
+                if angle < self.down_threshold + HYSTERESIS_TOLERANCE:
+                    if self._is_stable(lambda a: a < self.down_threshold + HYSTERESIS_TOLERANCE):
+                        self._transition(RepPhase.DOWN, angle)
+                        
+                # UP TRANSITION & COUNT
+                elif angle > self.up_threshold - HYSTERESIS_TOLERANCE:
+                    if self._is_stable(lambda a: a > self.up_threshold - HYSTERESIS_TOLERANCE):
+                        if self._phase == RepPhase.DOWN:
+                            self.reps += 1
+                            self._transition(RepPhase.UP, angle)
+                        elif self._phase == RepPhase.START:
+                            self._transition(RepPhase.UP, angle)
             
-            # DOWN TRANSITION
-            if angle < self.down_threshold + HYSTERESIS_TOLERANCE:
-                if self._is_stable(lambda a: a < self.down_threshold + HYSTERESIS_TOLERANCE):
-                    self._transition(RepPhase.DOWN, angle)
-                    
-            # UP TRANSITION & COUNT
-            elif angle > self.up_threshold - HYSTERESIS_TOLERANCE:
-                if self._is_stable(lambda a: a > self.up_threshold - HYSTERESIS_TOLERANCE):
-                    if self._phase == RepPhase.DOWN:
-                        self.reps += 1
-                        self._transition(RepPhase.UP, angle)
-                    elif self._phase == RepPhase.START:
-                        self._transition(RepPhase.UP, angle)
-        
-        else:
-            # --- INVERTED LOGIC (Bicep Curl) ---
-            # DOWN (Extension): Angle INCREASES (extends arm > 160)
-            # UP (Flexion/Contraction): Angle DECREASES (< 30)
-            
-            # DOWN TRANSITION
-            if angle > self.down_threshold - HYSTERESIS_TOLERANCE:
-                if self._is_stable(lambda a: a > self.down_threshold - HYSTERESIS_TOLERANCE):
-                    self._transition(RepPhase.DOWN, angle)
-            
-            # UP TRANSITION & COUNT
-            elif angle < self.up_threshold + HYSTERESIS_TOLERANCE:
-                if self._is_stable(lambda a: a < self.up_threshold + HYSTERESIS_TOLERANCE):
-                    if self._phase == RepPhase.DOWN:
-                        self.reps += 1
-                        self._transition(RepPhase.UP, angle)
-                    elif self._phase == RepPhase.START:
-                        self._transition(RepPhase.UP, angle)
-            
-        return self.reps, self.state
+            else:
+                # --- INVERTED LOGIC (Bicep Curl) ---
+                # DOWN (Extension): Angle INCREASES (extends arm > 160)
+                # UP (Flexion/Contraction): Angle DECREASES (< 30)
+                
+                # DOWN TRANSITION
+                if angle > self.down_threshold - HYSTERESIS_TOLERANCE:
+                    if self._is_stable(lambda a: a > self.down_threshold - HYSTERESIS_TOLERANCE):
+                        self._transition(RepPhase.DOWN, angle)
+                
+                # UP TRANSITION & COUNT
+                elif angle < self.up_threshold + HYSTERESIS_TOLERANCE:
+                    if self._is_stable(lambda a: a < self.up_threshold + HYSTERESIS_TOLERANCE):
+                        if self._phase == RepPhase.DOWN:
+                            self.reps += 1
+                            self._transition(RepPhase.UP, angle)
+                        elif self._phase == RepPhase.START:
+                            self._transition(RepPhase.UP, angle)
+                
+            return self.reps, self.state
 
     def _is_stable(self, predicate: Callable[[float], bool]) -> bool:
         """Checks if a condition is true for 'stability_frames' consecutive frames."""
-        with self._lock:
-            if len(self._history) < self.stability_frames:
-                return False
-            return all(predicate(x) for x in list(self._history)[-self.stability_frames:])
+        if len(self._history) < self.stability_frames:
+            return False
+        return all(predicate(x) for x in list(self._history)[-self.stability_frames:])
     
     def reset(self) -> None:
         """Reset counter state."""
@@ -187,7 +186,7 @@ class StaticDurationCounter:
         self._countdown_remaining: int = 0
         
         # Thread-safe
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._logger = logging.getLogger("FSM.Hold")
 
     @property
