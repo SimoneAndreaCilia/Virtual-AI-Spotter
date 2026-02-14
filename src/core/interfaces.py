@@ -22,7 +22,7 @@ class PushUpHistoryEntry(NamedTuple):
     reps: int
     is_valid: bool
 
-# Definizione del contratto per i risultati dell'analisi
+# Definition of the contract for the analysis results
 @dataclass
 class AnalysisResult:
     reps: int
