@@ -7,8 +7,8 @@ This module acts as the COMPOSITION ROOT:
 - Allows easy swapping of implementations (real vs mock)
 
 For testing, you can import and use different implementations:
-    from src.infrastructure.mock_video import MockVideoSource
-    from src.infrastructure.mock_pose import MockPoseEstimator
+    from tests.mocks.mock_video import MockVideoSource
+    from tests.mocks.mock_pose import MockPoseEstimator
 """
 import sys
 import logging
