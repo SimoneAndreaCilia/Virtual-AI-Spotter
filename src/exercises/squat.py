@@ -55,7 +55,7 @@ class Squat(RepBasedMixin, Exercise):
 
     def process_frame(self, landmarks: np.ndarray, timestamp: Optional[float] = None) -> AnalysisResult:
         """
-        Input: landmarks (Array 17x3 di YOLO: [x, y, conf])
+        Input: landmarks (Array 17x3 of YOLO: [x, y, conf])
         Output: AnalysisResult
         """
         
