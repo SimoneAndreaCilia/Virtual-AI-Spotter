@@ -26,12 +26,12 @@ from lambda_function import lambda_handler, validate_payload, build_dynamo_item
 def _valid_payload() -> dict:
     """Returns a complete, valid session payload."""
     return {
-        "session_id": "abc-123-def",
-        "user_id": "user-456-ghi",
-        "exercise_name": "Squat",
-        "start_time": "2026-03-08T16:30:00",
+        "SessionID": "abc-123-def",
+        "UserID": "user-456-ghi",
+        "ExerciseName": "Squat",
+        "StartTime": "2026-03-08T16:30:00",
         "end_time": "2026-03-08T16:45:00",
-        "duration_seconds": 900,
+        "DurationSeconds": 900,
         "target_sets": 3,
         "target_reps": 15,
         "sets": [
@@ -53,9 +53,9 @@ def _minimal_payload() -> dict:
     """Returns a payload with only required fields."""
     return {
         "session_id": "min-session-001",
-        "user_id": "min-user-001",
-        "exercise_name": "Bicep Curl",
-        "start_time": "2026-03-08T10:00:00"
+        "UserID": "min-user-001",
+        "ExerciseName": "Bicep Curl",
+        "StartTime": "2026-03-08T10:00:00"
     }
 
 
