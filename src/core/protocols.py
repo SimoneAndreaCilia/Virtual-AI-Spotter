@@ -107,3 +107,27 @@ class GestureHandlerProtocol(Protocol):
     def reset(self) -> None:
         """Clear gesture history."""
         ...
+
+
+@runtime_checkable
+class CloudUploaderProtocol(Protocol):
+    """
+    Interface for cloud session uploading.
+
+    Implementations:
+    - CloudSessionUploader (real HTTP client → API Gateway)
+    - MockCloudUploader (for testing)
+    
+    Note: This is NOT a DatabaseManagerProtocol replacement.
+    It only handles session upload to the cloud backend.
+    The local SQLite database remains the primary data store.
+    """
+
+    def upload_session(self, session: Any) -> None:
+        """
+        Uploads a completed session to the cloud backend.
+        
+        Must be non-blocking (runs in a background thread).
+        Failures are logged but never raised to the caller.
+        """
+        ...
