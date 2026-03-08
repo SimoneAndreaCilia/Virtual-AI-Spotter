@@ -24,14 +24,14 @@ from lambda_function import lambda_handler, validate_payload, build_dynamo_item
 # =============================================================================
 
 def _valid_payload() -> dict:
-    """Returns a complete, valid session payload."""
+    """Returns a complete, valid session payload (lowercase = API input schema)."""
     return {
-        "SessionID": "abc-123-def",
-        "UserID": "user-456-ghi",
-        "ExerciseName": "Squat",
-        "StartTime": "2026-03-08T16:30:00",
+        "session_id": "abc-123-def",
+        "user_id": "user-456-ghi",
+        "exercise_name": "Squat",
+        "start_time": "2026-03-08T16:30:00",
         "end_time": "2026-03-08T16:45:00",
-        "DurationSeconds": 900,
+        "duration_seconds": 900,
         "target_sets": 3,
         "target_reps": 15,
         "sets": [
@@ -50,12 +50,12 @@ def _valid_payload() -> dict:
 
 
 def _minimal_payload() -> dict:
-    """Returns a payload with only required fields."""
+    """Returns a payload with only required fields (lowercase = API input schema)."""
     return {
         "session_id": "min-session-001",
-        "UserID": "min-user-001",
-        "ExerciseName": "Bicep Curl",
-        "StartTime": "2026-03-08T10:00:00"
+        "user_id": "min-user-001",
+        "exercise_name": "Bicep Curl",
+        "start_time": "2026-03-08T10:00:00"
     }
 
 
@@ -217,20 +217,20 @@ class TestBuildDynamoItem(unittest.TestCase):
         self.assertEqual(item["Timestamp"], payload["start_time"])
 
     def test_partition_key_is_user_id(self):
-        """user_id should be the partition key."""
+        """user_id from payload should map to PascalCase 'UserID' key."""
         payload = _valid_payload()
         item = build_dynamo_item(payload)
 
-        self.assertEqual(item["user_id"], payload["user_id"])
+        self.assertEqual(item["UserID"], payload["user_id"])
 
     def test_includes_required_fields(self):
-        """Item should contain all required fields."""
+        """Item should contain all required fields in PascalCase."""
         payload = _valid_payload()
         item = build_dynamo_item(payload)
 
-        self.assertIn("session_id", item)
-        self.assertIn("exercise_name", item)
-        self.assertIn("start_time", item)
+        self.assertIn("SessionID", item)
+        self.assertIn("ExerciseName", item)
+        self.assertIn("StartTime", item)
         self.assertIn("received_at", item)
 
     def test_includes_optional_fields_when_present(self):
@@ -295,7 +295,7 @@ class TestLambdaHandler(unittest.TestCase):
         mock_table.put_item.assert_called_once()
         call_args = mock_table.put_item.call_args
         item = call_args[1]["Item"] if "Item" in call_args[1] else call_args[0][0]
-        self.assertEqual(item["user_id"], "user-456-ghi")
+        self.assertEqual(item["UserID"], "user-456-ghi")
 
     @patch("lambda_function.table")
     def test_minimal_payload_returns_201(self, mock_table):

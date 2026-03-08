@@ -149,8 +149,8 @@ def write_to_dynamodb(item: Dict[str, Any]) -> None:
     """
     table.put_item(Item=item)
     logger.info(
-        f"Item written successfully: user_id={item['user_id']}, "
-        f"Timestamp={item['Timestamp']}, session_id={item['session_id']}"
+        f"Item written successfully: UserID={item['UserID']}, "
+        f"Timestamp={item['Timestamp']}, SessionID={item['SessionID']}"
     )
 
 
