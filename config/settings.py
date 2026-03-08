@@ -117,3 +117,13 @@ THICKNESS = {
     "TEXT": 2,
     "BOX": -1  # -1 fills the shape
 }
+
+# --- 6. AWS / CLOUD CONFIGURATION ---
+# These settings control the optional cloud upload feature.
+# Without a .env file, everything defaults to disabled (app works offline).
+AWS_API_URL = _get_env("AWS_API_URL", "")                    # API Gateway endpoint
+AWS_API_KEY = _get_env("AWS_API_KEY", "")                    # API Key for x-api-key header
+CLOUD_UPLOAD_ENABLED = _get_env("CLOUD_UPLOAD_ENABLED", False, lambda v: v.lower() == "true")
+CLOUD_UPLOAD_TIMEOUT = _get_env("CLOUD_UPLOAD_TIMEOUT", 10, int)       # HTTP timeout (seconds)
+CLOUD_UPLOAD_MAX_RETRIES = _get_env("CLOUD_UPLOAD_MAX_RETRIES", 2, int) # Max retry attempts
+DYNAMODB_TABLE = _get_env("DYNAMODB_TABLE", "SpotterAI_Workout_Logs")  # DynamoDB table name

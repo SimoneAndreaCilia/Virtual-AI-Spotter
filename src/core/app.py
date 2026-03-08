@@ -17,7 +17,7 @@ from config.settings import LOGS_DIR, SHOW_FPS, FRAME_SKIP, GESTURE_ENABLED, GES
 from config.translation_strings import i18n
 from src.core.interfaces import VideoSource
 from src.core.exceptions import SpotterError
-from src.core.protocols import PoseDetector, DatabaseManagerProtocol as DBManager
+from src.core.protocols import PoseDetector, DatabaseManagerProtocol as DBManager, CloudUploaderProtocol
 from src.core.session_manager import SessionManager
 from src.core.factory import ExerciseFactory
 from src.core.gesture_handler import GestureHandler
@@ -59,7 +59,8 @@ class SpotterApp:
         video_source: VideoSource,
         pose_detector: PoseDetector,
         db_manager: DBManager,
-        config: AppConfig
+        config: AppConfig,
+        cloud_uploader: Optional[CloudUploaderProtocol] = None
     ):
         """
         Initialize SpotterApp with injected dependencies.
@@ -69,11 +70,13 @@ class SpotterApp:
             pose_detector: PoseDetector implementation (PoseEstimator or MockPoseEstimator)
             db_manager: DatabaseManager implementation
             config: Configuration dict from CLI (exercise_name, target_reps, etc.)
+            cloud_uploader: Optional CloudSessionUploader for AWS integration
         """
         self.video_source = video_source
         self.pose_detector = pose_detector
         self.db_manager = db_manager
         self.config = config
+        self.cloud_uploader = cloud_uploader
         
         # Internal state (initialized in setup())
         self.session_manager: Optional[SessionManager] = None
@@ -125,7 +128,8 @@ class SpotterApp:
             keypoint_extractor=keypoint_extractor,
             target_sets=self.config.get('target_sets', 3),
             target_reps=self.config.get('target_reps', 10),
-            gesture_handler=gesture_handler
+            gesture_handler=gesture_handler,
+            cloud_uploader=self.cloud_uploader
         )
         
         # 5. Visualizer

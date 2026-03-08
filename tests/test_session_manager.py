@@ -323,6 +323,88 @@ class TestSessionManagerUIState(unittest.TestCase):
         ui_state = self.sm.update(pose_data=None, timestamp=1.0)
         self.assertEqual(ui_state.workout_state, "REST")
 
+class MockCloudUploader:
+    """Mock cloud uploader for testing cloud integration."""
+    
+    def __init__(self, should_fail: bool = False):
+        self.uploaded_sessions = []
+        self.should_fail = should_fail
+    
+    def upload_session(self, session):
+        """Records upload calls for verification."""
+        if self.should_fail:
+            raise ConnectionError("Simulated network error")
+        self.uploaded_sessions.append(session)
+
+
+class TestSessionManagerCloudIntegration(unittest.TestCase):
+    """Test cloud uploader integration in SessionManager."""
+    
+    def setUp(self):
+        self.mock_db = MockDatabaseManager()
+        self.mock_exercise = MockExercise()
+        self.mock_extractor = MockKeypointExtractor()
+        self.mock_cloud = MockCloudUploader()
+    
+    def _create_sm(self, cloud_uploader=None):
+        """Helper to create a SessionManager with optional cloud uploader."""
+        return SessionManager(
+            db_manager=self.mock_db,
+            user_id=1,
+            exercise=self.mock_exercise,
+            keypoint_extractor=self.mock_extractor,
+            target_sets=2,
+            target_reps=3,
+            cloud_uploader=cloud_uploader
+        )
+    
+    def test_end_session_calls_cloud_upload(self):
+        """Cloud uploader should be called when session ends."""
+        sm = self._create_sm(cloud_uploader=self.mock_cloud)
+        
+        # Complete all sets
+        for _ in range(2):
+            self.mock_exercise.set_reps(3)
+            sm.update(pose_data=None, timestamp=0.0)
+            if sm.workout_state == WorkoutState.REST:
+                sm.handle_user_input('CONTINUE')
+        
+        self.assertEqual(len(self.mock_db.saved_sessions), 1)
+        self.assertEqual(len(self.mock_cloud.uploaded_sessions), 1)
+        # Both should receive the same session entity
+        self.assertIs(
+            self.mock_db.saved_sessions[0],
+            self.mock_cloud.uploaded_sessions[0]
+        )
+    
+    def test_end_session_without_cloud_uploader(self):
+        """Session should save normally when no cloud uploader is provided (backward compat)."""
+        sm = self._create_sm(cloud_uploader=None)
+        
+        sm.save_session()
+        
+        self.assertEqual(len(self.mock_db.saved_sessions), 1)
+        # No crash, no cloud upload
+    
+    def test_cloud_upload_failure_does_not_break_session(self):
+        """Cloud upload failure should NOT prevent local save or crash the app."""
+        failing_cloud = MockCloudUploader(should_fail=True)
+        sm = self._create_sm(cloud_uploader=failing_cloud)
+        
+        # Complete all sets
+        for _ in range(2):
+            self.mock_exercise.set_reps(3)
+            sm.update(pose_data=None, timestamp=0.0)
+            if sm.workout_state == WorkoutState.REST:
+                sm.handle_user_input('CONTINUE')
+        
+        # Local save should still work
+        self.assertEqual(len(self.mock_db.saved_sessions), 1)
+        # Cloud upload was attempted but failed — no uploaded sessions
+        self.assertEqual(len(failing_cloud.uploaded_sessions), 0)
+        # Session should be marked as finished
+        self.assertTrue(sm.is_session_finished())
+
 
 if __name__ == '__main__':
     unittest.main()
