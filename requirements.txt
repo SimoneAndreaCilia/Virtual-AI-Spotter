@@ -5,6 +5,7 @@ numpy>=1.24.0
 
 # Cloud & Data
 boto3>=1.28.0           # Per AWS
+requests>=2.31.0        # HTTP client per API Gateway
 python-dotenv>=1.0.0    # Per leggere il file .env
 
 # Dev Tools & Testing
