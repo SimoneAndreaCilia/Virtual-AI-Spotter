@@ -119,12 +119,12 @@ def build_dynamo_item(body: Dict[str, Any]) -> Dict[str, Any]:
 
     item = {
         # Keys
-        "user_id": body["user_id"],
+        "UserID": body["user_id"],
         "Timestamp": body["start_time"],  # Sort Key maps from start_time
         # Session data
-        "session_id": body["session_id"],
-        "exercise_name": body["exercise_name"],
-        "start_time": body["start_time"],
+        "SessionID": body["session_id"],
+        "ExerciseName": body["exercise_name"],
+        "StartTime": body["start_time"],
         # Server-side metadata
         "received_at": now_utc,
     }
