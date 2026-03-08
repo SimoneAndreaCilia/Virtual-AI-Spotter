@@ -14,6 +14,7 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
 import boto3
@@ -108,12 +109,30 @@ def validate_payload(body: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
 # DynamoDB Writer
 # =============================================================================
 
+def _convert_floats(obj: Any) -> Any:
+    """
+    Recursively converts float values to Decimal for DynamoDB compatibility.
+
+    DynamoDB's boto3 library raises TypeError on Python floats.
+    This traverses dicts, lists, and scalar values to ensure all
+    float instances are converted to Decimal.
+    """
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    elif isinstance(obj, dict):
+        return {k: _convert_floats(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_convert_floats(v) for v in obj]
+    return obj
+
+
 def build_dynamo_item(body: Dict[str, Any]) -> Dict[str, Any]:
     """
     Builds the DynamoDB item from the validated payload.
 
     Maps start_time → Timestamp (Sort Key).
     Adds server-side metadata (received_at).
+    Converts all float values to Decimal (DynamoDB requirement).
     """
     now_utc = datetime.now(timezone.utc).isoformat()
 
@@ -138,7 +157,7 @@ def build_dynamo_item(body: Dict[str, Any]) -> Dict[str, Any]:
         if field in body and body[field] is not None:
             item[field] = body[field]
 
-    return item
+    return _convert_floats(item)
 
 
 def write_to_dynamodb(item: Dict[str, Any]) -> None:
