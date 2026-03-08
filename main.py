@@ -3,6 +3,7 @@ Main Entry Point for Virtual AI Spotter.
 
 This module acts as the COMPOSITION ROOT:
 - Creates all dependencies (VideoSource, PoseDetector, DatabaseManager)
+- Optionally creates CloudSessionUploader for AWS integration
 - Injects them into SpotterApp
 - Allows easy swapping of implementations (real vs mock)
 
@@ -13,12 +14,19 @@ For testing, you can import and use different implementations:
 import sys
 import logging
 
-from config.settings import CAMERA_ID, MODEL_PATH, DEVICE
+from dotenv import load_dotenv
+
+from config.settings import (
+    CAMERA_ID, MODEL_PATH, DEVICE,
+    AWS_API_URL, AWS_API_KEY, CLOUD_UPLOAD_ENABLED,
+    CLOUD_UPLOAD_TIMEOUT, CLOUD_UPLOAD_MAX_RETRIES
+)
 from src.core.app import SpotterApp
 from src.core.exceptions import SpotterError
 from src.infrastructure.webcam import WebcamSource
 from src.infrastructure.ai_inference import PoseEstimator
 from src.data.db_manager import DatabaseManager
+from src.data.api_client import CloudSessionUploader
 from src.ui.cli import CLI
 
 
@@ -27,8 +35,12 @@ def create_production_app() -> SpotterApp:
     Factory function that creates SpotterApp with production dependencies.
     
     Returns:
-        SpotterApp configured with real webcam, AI model, and database.
+        SpotterApp configured with real webcam, AI model, database,
+        and optional cloud uploader (if AWS is configured).
     """
+    # 0. Load environment variables from .env file
+    load_dotenv()
+    
     # 1. Get configuration from CLI
     config = CLI.get_initial_config()
     
@@ -37,12 +49,23 @@ def create_production_app() -> SpotterApp:
     video_source = WebcamSource(source_index=CAMERA_ID)
     pose_detector = PoseEstimator(MODEL_PATH, DEVICE)
     
-    # 3. Inject into App
+    # 3. Create Cloud Uploader (optional — only if AWS is configured)
+    cloud_uploader = None
+    if CLOUD_UPLOAD_ENABLED and AWS_API_URL:
+        cloud_uploader = CloudSessionUploader(
+            api_url=AWS_API_URL,
+            api_key=AWS_API_KEY,
+            timeout=CLOUD_UPLOAD_TIMEOUT,
+            max_retries=CLOUD_UPLOAD_MAX_RETRIES
+        )
+    
+    # 4. Inject into App
     app = SpotterApp(
         video_source=video_source,
         pose_detector=pose_detector,
         db_manager=db_manager,
-        config=config
+        config=config,
+        cloud_uploader=cloud_uploader
     )
     
     return app

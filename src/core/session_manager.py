@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Any, Optional
 from src.core.interfaces import Exercise
-from src.core.protocols import KeypointExtractor, GestureHandlerProtocol, DatabaseManagerProtocol
+from src.core.protocols import KeypointExtractor, GestureHandlerProtocol, DatabaseManagerProtocol, CloudUploaderProtocol
 from src.core.entities.session import Session
 from src.core.entities.ui_state import UIState
 from src.core.entities.workout_state import WorkoutState
@@ -10,7 +10,8 @@ from config.translation_strings import i18n
 class SessionManager:
     def __init__(self, db_manager: DatabaseManagerProtocol, user_id: int, exercise: Exercise, 
                  keypoint_extractor: KeypointExtractor, target_sets: int, target_reps: int,
-                 gesture_handler: Optional[GestureHandlerProtocol] = None):
+                 gesture_handler: Optional[GestureHandlerProtocol] = None,
+                 cloud_uploader: Optional[CloudUploaderProtocol] = None):
         self.db_manager: DatabaseManagerProtocol = db_manager
         self.user_id: int = user_id
         
@@ -35,6 +36,9 @@ class SessionManager:
         
         # Gesture Handler (injected collaborator for hands-free control)
         self.gesture_handler = gesture_handler
+        
+        # Cloud Uploader (injected collaborator for AWS session upload)
+        self.cloud_uploader = cloud_uploader
         
         logging.info(f"SessionManager created for {exercise.display_name_key}")
 
@@ -133,6 +137,12 @@ class SessionManager:
         if not self.session_entity.end_time:
             self.session_entity.end_session()
             self.db_manager.save_session(self.session_entity)
+            # Cloud upload (fire-and-forget, non-blocking)
+            if self.cloud_uploader:
+                try:
+                    self.cloud_uploader.upload_session(self.session_entity)
+                except Exception as e:
+                    logging.warning(f"Cloud upload failed: {e}")
     
     def save_session(self) -> None:
         # Public method to force save (e.g. on app quit)
