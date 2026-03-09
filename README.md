@@ -4,10 +4,13 @@
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)
 ![Coverage](https://img.shields.io/badge/Tests-Passing-brightgreen)
+![AWS](https://img.shields.io/badge/Cloud-AWS_Integrated-orange)
 
 > 🚀 **Major Update**: The core engine has been refactored for **Production Readiness**.
 > Full rewrite around **FSM-based counting** (debouncing + hysteresis), a **modular Feedback System**, **One Euro Filter** signal smoothing, and a **pure-math Geometry Engine** (zero NumPy overhead).
-> Architecture highlights: Factory + Registry extensibility, Protocol-based DI, Session Manager with set/rest orchestration, hands-free **Gesture Control**, **i18n** (IT/EN), **SQLite** persistence, and an optimized **HUD** with ROI alpha blending — all validated by a **136-test suite** running at **30+ FPS on CPU**.
+> Architecture highlights: Factory + Registry extensibility, Protocol-based DI, Session Manager with set/rest orchestration, hands-free **Gesture Control**, **i18n** (IT/EN), **SQLite** persistence, and an optimized **HUD** with ROI alpha blending — all validated by a **150+ test suite** running at **30+ FPS on CPU**.
+
+> ☁️ **NEW — AWS Cloud Integration**: Workout sessions are now persisted to the cloud via **API Gateway → Lambda → DynamoDB** pipeline. Data Batching pattern sends a single JSON payload per session. Configurable via `.env`, fully optional (app works offline with SQLite only).
 
 ## Project Overview
 **Virtual AI Spotter** is a real-time Computer Vision assistant designed to act as an intelligent personal trainer. It utilizes state-of-the-art Deep Learning and geometric analysis to provide automatic repetition counting, exercise suggestions, and instant feedback on execution form.
@@ -135,14 +138,49 @@ Presentation layer with separated rendering responsibilities:
 *   **Smoothing** (`smoothing.py`): One Euro Filter for jitter reduction.
 *   **Circular Buffer**: `collections.deque` for temporal smoothing (30-frame window).
 
-### 5. Hybrid Cloud Architecture
+### 5. Hybrid Cloud Architecture (AWS)
 
-*   **Edge**: Real-time inference on local PC/GPU for zero-latency feedback.
-*   **Cloud (AWS)**: Planned async sync to DynamoDB/S3 via Lambda.
+The project implements a **Hybrid Edge–Cloud** model: real-time inference runs locally for zero-latency feedback, while session data is persisted to the cloud asynchronously after each workout.
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+graph LR
+    subgraph EDGE["💻 Edge (Local)"]
+        direction TB
+        A["📷 Webcam"] --> B["🤖 YOLOv8 Pose"]
+        B --> C["⚙️ FSM + Feedback"]
+        C --> D["💾 SQLite"]
+    end
+
+    subgraph CLOUD["☁️ AWS Cloud"]
+        direction TB
+        E["🌐 API Gateway"] --> F["⚡ Lambda"]
+        F --> G["🗄️ DynamoDB"]
+    end
+
+    D ==>|"POST /sessions\(Data Batching)"| E
+
+    style EDGE fill:#f3f4f6,stroke:#6b7280,stroke-width:2px,color:#374151
+    style CLOUD fill:#fff7ed,stroke:#f97316,stroke-width:2px,color:#9a3412
+    style A fill:#ffffff,stroke:#9ca3af,stroke-width:1px,color:#1f2937
+    style B fill:#ffffff,stroke:#9ca3af,stroke-width:1px,color:#1f2937
+    style C fill:#ffffff,stroke:#60a5fa,stroke-width:1px,color:#1e3a8a
+    style D fill:#ffffff,stroke:#60a5fa,stroke-width:1px,color:#1e3a8a
+    style E fill:#ffffff,stroke:#fb923c,stroke-width:1px,color:#9a3412
+    style F fill:#ffffff,stroke:#fb923c,stroke-width:1px,color:#9a3412
+    style G fill:#ffffff,stroke:#fb923c,stroke-width:1px,color:#9a3412
+    linkStyle default stroke:#64748b,stroke-width:1px
+    linkStyle 3 stroke:#f97316,stroke-width:2px
+```
+
+*   **Edge (Local)**: Real-time inference on local PC/GPU for zero-latency feedback. Sessions are saved to **SQLite**.
+*   **Cloud (AWS)**: After each workout, a single JSON payload (Data Batching) is sent to **API Gateway** (`POST /sessions`), which triggers a **Lambda** function that validates the data and writes it to **DynamoDB**.
+*   **Security**: API Key authentication via `x-api-key` header. IAM policy follows Least Privilege (only `dynamodb:PutItem` + CloudWatch logs).
+*   **Configuration**: All AWS settings are loaded from `.env` via `config/settings.py`. Cloud upload is fully optional — without a `.env` file, the app works entirely offline.
 
 ### 6. Quality Assurance
 
-*   **Test Suite** (`tests/`): 136 automated tests across 13 test files — FSM, Geometry, SessionManager, Gesture Detection, DI mocks, exercise integration, and state display coverage.
+*   **Test Suite** (`tests/`): 150+ automated tests across 14 test files — FSM, Geometry, SessionManager, Gesture Detection, DI mocks, exercise integration, state display, and **AWS Lambda** coverage.
 *   **Verification Scripts**: Manual validation tools for debouncing, i18n, refactoring.
 
 ---
@@ -156,8 +194,14 @@ Presentation layer with separated rendering responsibilities:
 ├── 📁 assets
 │   └── 📁 models
 │       └── 📄 yolov8n-pose.pt                 # Pre-trained YOLOv8 pose model
+├── 📁 aws                                     # ☁️ AWS backend infrastructure
+│   ├── 📁 lambda                              # Lambda function package
+│   │   ├── 🐍 lambda_function.py              # Session Logger (validate → DynamoDB)
+│   │   └── 📄 requirements.txt               # Lambda dependencies (boto3)
+│   ├── 📄 iam-policy.json                     # Least-privilege IAM policy
+│   └── 📝 README.md                           # AWS deploy instructions & API docs
 ├── 📁 config
-│   ├── 🐍 settings.py                         # Global constants, thresholds, colors
+│   ├── 🐍 settings.py                         # Global constants, thresholds, AWS config
 │   └── 🐍 translation_strings.py              # i18n strings (IT/EN)
 ├── 📁 scripts
 │   ├── 🐍 check_cam.py                        # Camera connectivity check
@@ -203,7 +247,7 @@ Presentation layer with separated rendering responsibilities:
 │       ├── 🐍 geometry.py                     # Pure-math angle calculations
 │       ├── 🐍 performance.py                  # FPS counter & timing helpers
 │       └── 🐍 smoothing.py                    # One Euro Filter for jitter reduction
-├── 📁 tests                                   # Automated test suite (136 tests)
+├── 📁 tests                                   # Automated test suite (150+ tests)
 │   ├── 📁 mocks                               # Test doubles
 │   │   ├── 🐍 __init__.py
 │   │   ├── 🐍 mock_pose.py                    # Fake PoseDetector for DI tests
@@ -218,6 +262,7 @@ Presentation layer with separated rendering responsibilities:
 │   ├── 🐍 test_fsm.py                         # FSM state transitions & debouncing
 │   ├── 🐍 test_geometry.py                    # Angle calculation edge cases
 │   ├── 🐍 test_gesture.py                     # Gesture recognition tests
+│   ├── 🐍 test_lambda.py                      # ☁️ AWS Lambda handler & validation tests
 │   ├── 🐍 test_plank.py                       # Plank lifecycle & timer tests
 │   ├── 🐍 test_pose_estimator.py              # PoseEstimator protocol tests
 │   ├── 🐍 test_session_manager.py             # Workout flow & state transitions
@@ -227,6 +272,7 @@ Presentation layer with separated rendering responsibilities:
 │   ├── 🐍 verify_features.py                  # Manual feature smoke tests
 │   ├── 🐍 verify_i18n.py                      # Manual i18n string verification
 │   └── 🐍 verify_refactor.py                  # Manual refactor validation
+├── ⚙️ .env                                     # AWS credentials & cloud config
 ├── ⚙️ .gitignore
 ├── 📄 LICENSE                                  # AGPL v3
 ├── 📝 README.md
@@ -253,7 +299,12 @@ Presentation layer with separated rendering responsibilities:
     - [x] Push-up (Occlusion handling)
     - [x] Bicep Curl (Inverted Logic)
     - [x] Plank (Static stability check)
-- [ ] **Cloud & DevOps**
-    - [ ] AWS Lambda & DynamoDB implementation details
+- [x] **Cloud & DevOps**
+    - [x] AWS Lambda Session Logger (`aws/lambda/lambda_function.py`)
+    - [x] DynamoDB Table
+    - [x] API Gateway HTTP API (`POST /sessions` + API Key auth)
+    - [x] IAM Least-Privilege Policy (`aws/iam-policy.json`)
+    - [x] Cloud config in `settings.py` + `.env` support
+    - [x] Lambda unit tests (`tests/test_lambda.py` — 25 tests)
     - [x] Unit Testing Suite (`tests/`)
     - [ ] CI/CD Pipeline (GitHub Actions)
