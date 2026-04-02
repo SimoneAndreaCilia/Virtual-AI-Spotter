@@ -77,3 +77,6 @@ ipython_config.py
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Documentation
+architecture_summary.md
