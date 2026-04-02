@@ -308,4 +308,3 @@ graph LR
     - [x] Lambda unit tests (`tests/test_lambda.py` — 25 tests)
     - [x] Unit Testing Suite (`tests/`)
     - [ ] CI/CD Pipeline (GitHub Actions)
-Test alessio
