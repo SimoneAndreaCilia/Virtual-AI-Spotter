@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 from typing import Tuple
 from src.core.interfaces import VideoSource
 from src.core.exceptions import VideoSourceError
@@ -9,7 +10,10 @@ class WebcamSource(VideoSource):
     def __init__(self, source_index: int = CAMERA_ID, width: int = FRAME_WIDTH, height: int = FRAME_HEIGHT):
         self.source_index = source_index
         # Initialize video capture
-        self.cap = cv2.VideoCapture(self.source_index)
+        if os.name == 'nt':
+            self.cap = cv2.VideoCapture(self.source_index, cv2.CAP_DSHOW)
+        else:
+            self.cap = cv2.VideoCapture(self.source_index)
         
         # Set resolution (HD by default)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)

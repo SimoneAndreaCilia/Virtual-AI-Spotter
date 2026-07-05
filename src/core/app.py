@@ -8,6 +8,7 @@ Implements Dependency Injection pattern:
 """
 import cv2
 import logging
+import os
 import time
 from typing import Optional
 
@@ -90,6 +91,9 @@ class SpotterApp:
         Call this after __init__ and before run().
         """
         # 1. Logger Setup
+        if not os.path.exists(LOGS_DIR):
+            os.makedirs(LOGS_DIR, exist_ok=True)
+            
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
