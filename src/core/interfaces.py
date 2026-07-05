@@ -158,3 +158,20 @@ class VideoSource(ABC):
     @abstractmethod
     def release(self):
         pass
+
+class OutputSink(ABC):
+    """
+    Interface for outputting frames and state.
+    Decouples the core loop from the transport mechanism (e.g. WebSocket, Local GUI).
+    """
+    
+    @abstractmethod
+    def emit(self, frame: np.ndarray, state_json: str) -> None:
+        """
+        Emit a frame and its corresponding state.
+        
+        Args:
+            frame: Raw OpenCV image array
+            state_json: Serialized UIState as JSON string
+        """
+        pass

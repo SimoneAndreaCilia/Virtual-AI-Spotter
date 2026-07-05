@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual AI Spotter - Workout</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="workout-layout">
+        <!-- Main Video Area -->
+        <div class="video-container">
+            <img id="video-stream" alt="Video Stream">
+            <canvas id="skeleton-canvas"></canvas>
+            
+            <!-- Overlays -->
+            <div id="workout-overlay" class="overlay hidden glass-panel">
+                <h1 id="overlay-title">Rest</h1>
+                <p id="overlay-subtitle">Take a breather</p>
+                <button id="continue-btn" class="btn-primary" style="margin-top:20px;">Continue</button>
+            </div>
+        </div>
+
+        <!-- Sidebar Dashboard -->
+        <div class="dashboard glass-panel">
+            <h2 id="exercise-name">Loading...</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">Set</span>
+                    <span class="stat-value" id="set-counter">0 / 0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label" id="rep-label">Reps</span>
+                    <span class="stat-value" id="rep-counter">0 / 0</span>
+                </div>
+            </div>
+            
+            <div class="feedback-box">
+                <span class="stat-label">Feedback</span>
+                <p id="feedback-text" class="feedback-text">Awaiting form...</p>
+            </div>
+            
+            <div class="state-indicator" id="state-indicator">
+                START
+            </div>
+            
+            <div class="controls">
+                <button id="quit-btn" class="btn-danger">Quit Workout</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

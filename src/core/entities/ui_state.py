@@ -24,3 +24,22 @@ class UIState:
     is_time_based: bool = False  # New flag for Timer vs Reps
     state_display: Optional[StateDisplayInfo] = None  # OCP: owned by each Exercise
 
+    def to_dict(self) -> dict:
+        """Serializes the UIState to a dictionary suitable for JSON."""
+        return {
+            "exercise_name": self.exercise_name,
+            "reps": self.reps,
+            "target_reps": self.target_reps,
+            "current_set": self.current_set,
+            "target_sets": self.target_sets,
+            "state": self.state,
+            "feedback_key": self.feedback_key,
+            "workout_state": self.workout_state,
+            "is_time_based": self.is_time_based,
+            "keypoints": self.keypoints.tolist() if self.keypoints is not None else None,
+            "state_display": {
+                "label_key": self.state_display.label_key,
+                "color": self.state_display.color,
+                "category": self.state_display.category
+            } if self.state_display else None
+        }

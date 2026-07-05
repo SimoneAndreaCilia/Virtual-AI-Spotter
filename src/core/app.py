@@ -10,20 +10,21 @@ import cv2
 import logging
 import os
 import time
+import json
+import queue
 from typing import Optional
 
 from src.core.config_types import AppConfig
 
 from config.settings import LOGS_DIR, SHOW_FPS, FRAME_SKIP, GESTURE_ENABLED, GESTURE_STABILITY, GESTURE_CONFIDENCE
 from config.translation_strings import i18n
-from src.core.interfaces import VideoSource
+from src.core.interfaces import VideoSource, OutputSink
 from src.core.exceptions import SpotterError
 from src.core.protocols import PoseDetector, DatabaseManagerProtocol as DBManager, CloudUploaderProtocol
 from src.core.session_manager import SessionManager
 from src.core.factory import ExerciseFactory
 from src.core.gesture_handler import GestureHandler
 from src.infrastructure.keypoint_extractor import YoloKeypointExtractor
-from src.ui.visualizer import Visualizer
 from src.utils.performance import FPSCounter
 
 
@@ -61,6 +62,7 @@ class SpotterApp:
         pose_detector: PoseDetector,
         db_manager: DBManager,
         config: AppConfig,
+        output_sink: OutputSink,
         cloud_uploader: Optional[CloudUploaderProtocol] = None
     ):
         """
@@ -71,18 +73,20 @@ class SpotterApp:
             pose_detector: PoseDetector implementation (PoseEstimator or MockPoseEstimator)
             db_manager: DatabaseManager implementation
             config: Configuration dict from CLI (exercise_name, target_reps, etc.)
+            output_sink: Interface to emit frames and state (e.g. WebSocket)
             cloud_uploader: Optional CloudSessionUploader for AWS integration
         """
         self.video_source = video_source
         self.pose_detector = pose_detector
         self.db_manager = db_manager
         self.config = config
+        self.output_sink = output_sink
         self.cloud_uploader = cloud_uploader
         
         # Internal state (initialized in setup())
         self.session_manager: Optional[SessionManager] = None
-        self.visualizer: Optional[Visualizer] = None
         self.running = False
+        self.command_queue = queue.Queue()
 
     def setup(self):
         """
@@ -136,9 +140,6 @@ class SpotterApp:
             cloud_uploader=self.cloud_uploader
         )
         
-        # 5. Visualizer
-        self.visualizer = Visualizer()
-        
         logging.info("SpotterApp initialized successfully.")
 
     def run(self):
@@ -176,19 +177,11 @@ class SpotterApp:
                 # Pass current time for smoothing algorithms
                 ui_state = self.session_manager.update(pose_data, time.time())
                 
-                # 4. Render
-                display_frame = self.visualizer.draw_dashboard_from_state(frame, ui_state)
+                # 4. Render & Output (Delegate to Sink)
+                state_json = json.dumps(ui_state.to_dict())
+                self.output_sink.emit(frame, state_json)
                 
-                # 4b. FPS overlay (optional)
-                if SHOW_FPS:
-                    fps = fps_counter.tick()
-                    cv2.putText(display_frame, f"FPS: {fps:.1f}", (10, 30),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                
-                # 5. Output
-                cv2.imshow(i18n.get('ui_title'), display_frame)
-                
-                # 6. Input Handlers (Keyboard)
+                # 5. Input Handlers
                 self._handle_input()
                 
                 frame_count += 1
@@ -203,16 +196,18 @@ class SpotterApp:
             self._cleanup()
 
     def _handle_input(self):
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            self.running = False
-        elif key == ord('c') or key == ord('C'):
-            self.session_manager.handle_user_input('CONTINUE')
+        try:
+            cmd = self.command_queue.get_nowait()
+            if cmd == 'quit':
+                self.running = False
+            elif cmd in ('continue', 'CONTINUE'):
+                self.session_manager.handle_user_input('CONTINUE')
+        except queue.Empty:
+            pass
 
     def _cleanup(self):
         if self.video_source:
             self.video_source.release()
-        cv2.destroyAllWindows()
         if self.session_manager:
             self.session_manager.save_session()
         logging.info("SpotterApp shut down cleanly.")

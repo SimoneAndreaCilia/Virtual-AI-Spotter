@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual AI Spotter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="setup-container glass-panel">
+        <h1>Virtual AI Spotter</h1>
+        <p class="subtitle">Select your workout</p>
+        
+        <form id="setup-form">
+            <div class="form-group">
+                <label>Exercise</label>
+                <select id="exercise" required>
+                    <option value="Bicep Curl">Bicep Curl</option>
+                    <option value="Squat">Squat</option>
+                    <option value="PushUp">Push Up</option>
+                    <option value="Plank">Plank</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Side</label>
+                <select id="side" required>
+                    <option value="both">Both</option>
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                </select>
+            </div>
+            
+            <div class="form-group row">
+                <div class="col">
+                    <label>Sets</label>
+                    <input type="number" id="sets" value="3" min="1" required>
+                </div>
+                <div class="col">
+                    <label>Reps (or Seconds)</label>
+                    <input type="number" id="reps" value="10" min="0" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Start Workout</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('setup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                exercise_name: document.getElementById('exercise').value,
+                side: document.getElementById('side').value,
+                target_sets: parseInt(document.getElementById('sets').value),
+                target_reps: parseInt(document.getElementById('reps').value),
+                exercise_config: { side: document.getElementById('side').value },
+                language: "EN"
+            };
+            
+            const res = await fetch('/api/setup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (res.ok) {
+                window.location.href = 'workout.html';
+            } else {
+                alert('Failed to start workout.');
+            }
+        });
+    </script>
+</body>
+</html>
