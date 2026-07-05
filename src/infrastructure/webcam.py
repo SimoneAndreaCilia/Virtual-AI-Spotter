@@ -1,6 +1,8 @@
+import os
+# Suppress OpenCV warning messages (like the DSHOW fallback warning)
+os.environ["OPENCV_LOG_LEVEL"] = "FATAL"
 import cv2
 import numpy as np
-import os
 from typing import Tuple
 from src.core.interfaces import VideoSource
 from src.core.exceptions import VideoSourceError
@@ -12,6 +14,9 @@ class WebcamSource(VideoSource):
         # Initialize video capture
         if os.name == 'nt':
             self.cap = cv2.VideoCapture(self.source_index, cv2.CAP_DSHOW)
+            if not self.cap.isOpened():
+                # Fallback to default backend if DirectShow fails
+                self.cap = cv2.VideoCapture(self.source_index)
         else:
             self.cap = cv2.VideoCapture(self.source_index)
         

@@ -19,7 +19,13 @@ def _detect_device() -> str:
     try:
         import torch
         if torch.cuda.is_available():
-            return "cuda"
+            try:
+                # Test compute capability to catch 'no kernel image' errors (e.g., RTX 50 series on older PyTorch)
+                _ = torch.tensor([1.0], device="cuda") * 2.0
+                return "cuda"
+            except RuntimeError as e:
+                print(f"Warning: CUDA detected but not usable for compute. Falling back to CPU.\nDetails: {e}")
+                return "cpu"
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             return "mps"
     except ImportError:
