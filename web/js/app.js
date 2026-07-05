@@ -3,6 +3,9 @@ const bgBlurImg = document.getElementById('bg-video-blur');
 const canvas = document.getElementById('skeleton-canvas');
 const ctx = canvas.getContext('2d');
 
+let translations = {};
+fetch('/api/translations').then(r => r.json()).then(data => translations = data);
+
 const exerciseNameEl = document.getElementById('exercise-name');
 const repCounterEl = document.getElementById('rep-counter');
 const repLabelEl = document.getElementById('rep-label');
@@ -138,11 +141,15 @@ function updateDashboard(state) {
     // Workout State overlays
     if (state.workout_state === "REST" || state.workout_state === "FINISHED") {
         overlay.classList.remove('hidden');
-        overlayTitle.textContent = state.workout_state === "REST" ? "Rest" : "Finished!";
-        overlaySubtitle.textContent = state.workout_state === "REST" ? "Take a breather." : "Great job!";
+        
+        const lang = state.language || "EN";
+        const dict = translations[lang] || {};
+        
+        overlayTitle.textContent = state.workout_state === "REST" ? (dict.ui_rest_title || "Rest") : (dict.ui_finish_title || "Finished!");
+        overlaySubtitle.textContent = state.workout_state === "REST" ? (dict.ui_rest_subtitle || "Take a breather.") : (dict.ui_finish_subtitle || "Great job!");
         
         const btn = document.getElementById('continue-btn');
-        btn.textContent = state.workout_state === "REST" ? "Continue" : "Torna alla Home";
+        btn.textContent = state.workout_state === "REST" ? (dict.ui_continue_btn || "Continue") : (dict.ui_quit_btn || "Back to Home");
         btn.dataset.action = state.workout_state === "REST" ? "continue" : "quit";
     } else {
         overlay.classList.add('hidden');

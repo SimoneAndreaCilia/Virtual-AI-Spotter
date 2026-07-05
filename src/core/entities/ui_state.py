@@ -4,7 +4,7 @@ UIState dataclass - represents the current state of the UI for rendering.
 This is passed from SessionManager to Visualizer each frame.
 """
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 import numpy as np
 from src.core.interfaces import StateDisplayInfo
 
@@ -21,12 +21,13 @@ class UIState:
     feedback_key: str
     workout_state: str  # "EXERCISE", "REST", "FINISHED"
     keypoints: Optional[np.ndarray] = None
-    is_time_based: bool = False  # New flag for Timer vs Reps
-    state_display: Optional[StateDisplayInfo] = None  # OCP: owned by each Exercise
+    is_time_based: bool = False
+    state_display: Optional[StateDisplayInfo] = None
     is_valid: bool = True
-    invalid_joints: List[int] = field(default_factory=list)
+    invalid_joints: List[str] = field(default_factory=list)
+    language: str = "IT"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict[str, Any]:
         """Serializes the UIState to a dictionary suitable for JSON."""
         return {
             "exercise_name": self.exercise_name,
@@ -45,5 +46,6 @@ class UIState:
                 "label_key": self.state_display.label_key,
                 "color": self.state_display.color,
                 "category": self.state_display.category
-            } if self.state_display else None
+            } if self.state_display else None,
+            "language": self.language
         }

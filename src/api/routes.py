@@ -37,20 +37,12 @@ async def setup_workout(request: Request, config: SetupRequest):
         if app_state.spotter_thread is not None:
             app_state.spotter_thread.join(timeout=2.0)
             
-    # Initialize new dependencies
-    db_manager = DatabaseManager()
-    video_source = WebcamSource(source_index=CAMERA_ID)
-    pose_detector = PoseEstimator(MODEL_PATH, DEVICE)
-    output_sink = DequeOutputSink(maxlen=2)
-    
-    cloud_uploader = None
-    if CLOUD_UPLOAD_ENABLED and AWS_API_URL:
-        cloud_uploader = CloudSessionUploader(
-            api_url=AWS_API_URL,
-            api_key=AWS_API_KEY,
-            timeout=CLOUD_UPLOAD_TIMEOUT,
-            max_retries=CLOUD_UPLOAD_MAX_RETRIES
-        )
+    # Retrieve global dependencies
+    db_manager = app_state.db_manager
+    video_source = app_state.video_source
+    pose_detector = app_state.pose_detector
+    output_sink = app_state.output_sink
+    cloud_uploader = app_state.cloud_uploader
     
     app_config = {
         'language': config.language,

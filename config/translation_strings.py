@@ -77,9 +77,11 @@ TRANSLATIONS = {
         "ui_goal": "Obiettivo",
         "ui_start_prompt": "INIZIA",
         "ui_rest_title": "TEMPO DI RECUPERO",
-        "ui_rest_subtitle": "Premi 'C' per la prossima serie",
+        "ui_rest_subtitle": "Prendi fiato",
         "ui_finish_title": "ALLENAMENTO COMPLETATO!",
-        "ui_finish_subtitle": "Premi 'Q' per uscire"
+        "ui_finish_subtitle": "Ottimo lavoro!",
+        "ui_continue_btn": "Continua",
+        "ui_quit_btn": "Torna alla Home"
     },
     
     "EN": {
@@ -158,9 +160,11 @@ TRANSLATIONS = {
         "ui_goal": "Goal",
         "ui_start_prompt": "START",
         "ui_rest_title": "REST TIME",
-        "ui_rest_subtitle": "Press 'C' to start next set",
+        "ui_rest_subtitle": "Take a breather",
         "ui_finish_title": "WORKOUT COMPLETE!",
-        "ui_finish_subtitle": "Press 'Q' to exit"
+        "ui_finish_subtitle": "Great job!",
+        "ui_continue_btn": "Continue",
+        "ui_quit_btn": "Back to Home"
     }
 }
 

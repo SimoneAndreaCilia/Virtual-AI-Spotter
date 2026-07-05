@@ -178,6 +178,7 @@ class SpotterApp:
                 ui_state = self.session_manager.update(pose_data, time.time())
                 
                 # 4. Render & Output (Delegate to Sink)
+                ui_state.language = self.config.get('language', 'IT')
                 ui_state.feedback_key = i18n.get(ui_state.feedback_key) if ui_state.feedback_key else ""
                 if ui_state.state_display:
                     ui_state.state_display = ui_state.state_display._replace(
@@ -212,8 +213,8 @@ class SpotterApp:
             pass
 
     def _cleanup(self):
-        if self.video_source:
-            self.video_source.release()
+        # NOTE: video_source is now a global singleton managed by FastAPI lifespan.
+        # Do NOT release it here, otherwise subsequent exercises will fail.
         if self.session_manager:
             self.session_manager.save_session()
         logging.info("SpotterApp shut down cleanly.")
