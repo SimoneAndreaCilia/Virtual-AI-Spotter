@@ -62,7 +62,7 @@
                     </div>
                 </div>
                 <div class="col">
-                    <label data-i18n="ui_reps">Ripetizioni (o Secondi)</label>
+                    <label id="reps-label" data-i18n="ui_reps">Ripetizioni (o Secondi)</label>
                     <div class="stepper-wrapper">
                         <button type="button" class="stepper-btn" onclick="updateStepper('reps', -1)">−</button>
                         <span id="reps-display" class="stepper-value" aria-live="polite">10</span>
@@ -98,6 +98,7 @@
             document.getElementById('lang-it').classList.toggle('active', lang === 'IT');
             document.getElementById('lang-en').classList.toggle('active', lang === 'EN');
             applyTranslations();
+            document.getElementById('exercise').dispatchEvent(new Event('change'));
         }
 
         function applyTranslations() {
@@ -154,6 +155,37 @@
                 alert('Failed to start workout.');
             }
         });
+
+        document.getElementById('exercise').addEventListener('change', (e) => {
+            const isPlank = e.target.value === 'Plank';
+            const repsLabel = document.getElementById('reps-label');
+            const repsInput = document.getElementById('reps');
+            const repsDisplay = document.getElementById('reps-display');
+            
+            if (isPlank) {
+                if (repsLabel) {
+                    repsLabel.textContent = currentLang === 'IT' ? 'Secondi' : 'Seconds';
+                    repsLabel.removeAttribute('data-i18n');
+                }
+                repsInput.value = 60;
+                repsDisplay.textContent = 60;
+            } else {
+                if (repsLabel) {
+                    repsLabel.setAttribute('data-i18n', 'ui_reps');
+                    if (translations[currentLang] && translations[currentLang]['ui_reps']) {
+                        repsLabel.textContent = translations[currentLang]['ui_reps'];
+                    } else {
+                        repsLabel.textContent = 'Ripetizioni';
+                    }
+                }
+                // Reset defaults for standard exercises if they were previously Plank
+                if (repsInput.value == 60) {
+                    repsInput.value = 10;
+                    repsDisplay.textContent = 10;
+                }
+            }
+        });
+
     </script>
 </body>
 </html>
