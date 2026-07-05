@@ -13,12 +13,21 @@
 > ☁️ **NEW — AWS Cloud Integration**: Workout sessions are now persisted to the cloud via **API Gateway → Lambda → DynamoDB** pipeline. Data Batching pattern sends a single JSON payload per session. Configurable via `.env`, fully optional (app works offline with SQLite only).
 
 ## Project Overview
-**Virtual AI Spotter** is a real-time Computer Vision assistant designed to act as an intelligent personal trainer. It utilizes state-of-the-art Deep Learning and geometric analysis to provide automatic repetition counting, exercise suggestions, and instant feedback on execution form.
+**Virtual AI Spotter** is a real-time Computer Vision assistant designed to act as an intelligent personal trainer. It utilizes state-of-the-art Deep Learning and geometric analysis to provide automatic repetition counting, exercise suggestions, and instant feedback on execution form. The system features a modern **Web-based Graphical User Interface (GUI)** for configuring exercises and viewing real-time skeletal overlays.
+
+<details>
+  <summary>🎥 <b>Watch the Video Preview</b></summary>
+  <br>
+  <a href="https://www.youtube.com/watch?v=voQPTonuG0o">
+    <img src="https://img.youtube.com/vi/voQPTonuG0o/maxresdefault.jpg" alt="Virtual AI Spotter Preview" width="600">
+  </a>
+</details>
 
 ## Technology Stack
 - **Core AI**: ![YOLOv8](https://img.shields.io/badge/YOLOv8-Deep_Learning-blue) YOLOv8 (Pose Estimation)
-- **Framework**: ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?logo=PyTorch&logoColor=white) PyTorch
 - **Computer Vision**: ![OpenCV](https://img.shields.io/badge/OpenCV-white.svg?logo=opencv&logoColor=black) OpenCV
+- **Backend & API**: ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white) FastAPI, WebSockets
+- **Frontend GUI**: Vanilla HTML/JS/CSS (Single-Page Application, Glassmorphism design)
 - **Logic**: 📐 Geometric Vector Analysis & ⚙️ Finite State Machines (FSM)
 - **Cloud**: ![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?logo=amazon-aws&logoColor=white) AWS (Lambda, DynamoDB, S3)
 - **Database**: ![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?logo=sqlite&logoColor=white) ![DynamoDB](https://img.shields.io/badge/Amazon%20DynamoDB-4053D6?logo=amazon-dynamodb&logoColor=white) SQLite (Local), DynamoDB (Cloud)
@@ -198,8 +207,8 @@ graph LR
 │   ├── 📁 lambda                              # Lambda function package
 │   │   ├── 🐍 lambda_function.py              # Session Logger (validate → DynamoDB)
 │   │   └── 📄 requirements.txt               # Lambda dependencies (boto3)
-│   ├── 📄 iam-policy.json                     # Least-privilege IAM policy
-│   └── 📝 README.md                           # AWS deploy instructions & API docs
+│   ├── 📝 README.md                           # AWS deploy instructions & API docs
+│   └── ⚙️ iam-policy.json                     # Least-privilege IAM policy
 ├── 📁 config
 │   ├── 🐍 settings.py                         # Global constants, thresholds, AWS config
 │   └── 🐍 translation_strings.py              # i18n strings (IT/EN)
@@ -207,6 +216,9 @@ graph LR
 │   ├── 🐍 check_cam.py                        # Camera connectivity check
 │   └── 🐍 verify_refactor.py                  # Post-refactor sanity checks
 ├── 📁 src
+│   ├── 📁 api                                 # FastAPI backend & WebSockets
+│   │   ├── 🐍 routes.py                       # REST & WebSocket endpoints
+│   │   └── 🐍 server.py                       # FastAPI application & lifespan singletons
 │   ├── 📁 core                                # Business logic (framework-agnostic)
 │   │   ├── 📁 entities                        # Domain objects (DDD)
 │   │   │   ├── 🐍 session.py                  # Workout session dataclass
@@ -220,11 +232,14 @@ graph LR
 │   │   ├── 🐍 feedback.py                     # Rule-based form correction engine
 │   │   ├── 🐍 fsm.py                          # RepetitionCounter & StaticDurationCounter
 │   │   ├── 🐍 gesture_detector.py             # Pose-based gesture recognition
+│   │   ├── 🐍 gesture_handler.py              # Gesture event handling
 │   │   ├── 🐍 interfaces.py                   # ABCs: Exercise, VideoSource, StateDisplayInfo
+│   │   ├── 🐍 mixins.py                       # Reusable mixins for exercises
 │   │   ├── 🐍 protocols.py                    # DI protocols: PoseDetector, DBManager
 │   │   ├── 🐍 registry.py                     # @register_exercise decorator & registry
 │   │   └── 🐍 session_manager.py              # Set/rest/rep orchestration
 │   ├── 📁 data                                # Persistence layer
+│   │   ├── 🐍 api_client.py                   # Client for API requests
 │   │   ├── 🐍 db_manager.py                   # SQLite CRUD operations
 │   │   └── 📄 schema.sql                      # Database schema definition
 │   ├── 📁 exercises                           # Concrete exercise implementations
@@ -236,26 +251,30 @@ graph LR
 │   ├── 📁 infrastructure                      # External system adapters
 │   │   ├── 🐍 ai_inference.py                 # YOLO model wrapper (PoseDetector)
 │   │   ├── 🐍 keypoint_extractor.py           # Raw YOLO output → 17×3 arrays
+│   │   ├── 🐍 sinks.py                        # WebSocket deque output sink
 │   │   └── 🐍 webcam.py                       # OpenCV camera capture (VideoSource)
-│   ├── 📁 ui                                  # Presentation layer
-│   │   ├── 🐍 cli.py                          # Interactive workout setup prompts
-│   │   ├── 🐍 dashboard_renderer.py           # HUD panel (reps, sets, state)
-│   │   ├── 🐍 overlay_renderer.py             # Full-screen REST/FINISHED overlays
-│   │   ├── 🐍 skeleton_renderer.py            # Pose skeleton & angle arcs
-│   │   └── 🐍 visualizer.py                   # Renderer facade (delegates to above)
+│   ├── 📁 ui                                  # Presentation layer (Deprecated, see web/)
 │   └── 📁 utils                               # Signal processing utilities
 │       ├── 🐍 geometry.py                     # Pure-math angle calculations
 │       ├── 🐍 performance.py                  # FPS counter & timing helpers
 │       └── 🐍 smoothing.py                    # One Euro Filter for jitter reduction
 ├── 📁 tests                                   # Automated test suite (150+ tests)
+│   ├── 📁 api
+│   │   └── 🐍 test_routes.py                  # API route tests
+│   ├── 📁 infrastructure
+│   │   └── 🐍 test_sinks.py                   # Sinks tests
 │   ├── 📁 mocks                               # Test doubles
 │   │   ├── 🐍 __init__.py
 │   │   ├── 🐍 mock_pose.py                    # Fake PoseDetector for DI tests
 │   │   └── 🐍 mock_video.py                   # Fake VideoSource for DI tests
 │   ├── 🐍 __init__.py
+│   ├── 🐍 conftest.py                         # Pytest configuration
 │   ├── 🐍 helpers.py                          # Shared fixtures (UIState, dummy frames)
+│   ├── 🐍 test_api_client.py                  # API client tests
 │   ├── 🐍 test_app_di.py                      # Dependency injection wiring tests
+│   ├── 🐍 test_app_integration.py             # App integration tests
 │   ├── 🐍 test_db_manual.py                   # SQLite persistence tests
+│   ├── 🐍 test_db_negative.py                 # SQLite negative tests
 │   ├── 🐍 test_entities_manual.py             # Domain entity tests
 │   ├── 🐍 test_exercise_integration.py        # End-to-end rep counting & form feedback
 │   ├── 🐍 test_exercises.py                   # Exercise process_frame unit tests
@@ -266,14 +285,24 @@ graph LR
 │   ├── 🐍 test_plank.py                       # Plank lifecycle & timer tests
 │   ├── 🐍 test_pose_estimator.py              # PoseEstimator protocol tests
 │   ├── 🐍 test_session_manager.py             # Workout flow & state transitions
+│   ├── 🐍 test_session_rest.py                # Session rest tests
 │   ├── 🐍 test_smoothing.py                   # One Euro Filter convergence tests
 │   ├── 🐍 test_visualizer.py                  # Renderer + state display mapping tests
 │   ├── 🐍 verify_debouncing.py                # Manual debouncing validation
 │   ├── 🐍 verify_features.py                  # Manual feature smoke tests
 │   ├── 🐍 verify_i18n.py                      # Manual i18n string verification
 │   └── 🐍 verify_refactor.py                  # Manual refactor validation
-├── ⚙️ .env                                     # AWS credentials & cloud config
+├── 📁 web                                     # Frontend Web Application
+│   ├── 📁 css
+│   │   └── 🎨 style.css                       # Styling for web GUI
+│   ├── 📁 js
+│   │   └── 📄 app.js                          # Web application logic
+│   ├── 🖼️ favicon.svg
+│   ├── 🌐 index.html                          # Landing page
+│   └── 🌐 workout.html                        # Workout interface
+├── ⚙️ .env.example                            # Example environment variables
 ├── ⚙️ .gitignore
+├── 📝 File Tree Virtual AI Spotter.md
 ├── 📄 LICENSE                                  # AGPL v3
 ├── 📝 README.md
 ├── 🐍 main.py                                 # Application entry point
