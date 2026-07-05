@@ -52,6 +52,7 @@ class SessionManager:
         feedback = ""
         stage = self.exercise_logic.stage
         keypoints = None
+        is_valid = True
 
         # Extract keypoints using injected extractor (decoupled from YOLO format)
         has_people, keypoints = self.keypoint_extractor.extract(pose_data)
@@ -62,6 +63,7 @@ class SessionManager:
             current_reps = analysis.reps
             feedback = analysis.correction
             stage = analysis.stage
+            is_valid = analysis.is_valid
             
             # Check Set Completion
             # For Rep-based: reps >= target
@@ -101,7 +103,8 @@ class SessionManager:
             workout_state=self.workout_state.value,
             keypoints=keypoints,
             is_time_based=getattr(self.exercise_logic, 'is_time_based', False),
-            state_display=self.exercise_logic.get_state_display(stage)
+            state_display=self.exercise_logic.get_state_display(stage),
+            is_valid=is_valid
         )
 
     def _complete_set(self) -> None:

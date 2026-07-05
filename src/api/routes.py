@@ -16,6 +16,7 @@ from config.settings import (
     AWS_API_URL, AWS_API_KEY, CLOUD_UPLOAD_ENABLED,
     CLOUD_UPLOAD_TIMEOUT, CLOUD_UPLOAD_MAX_RETRIES
 )
+from config.translation_strings import TRANSLATIONS
 
 router = APIRouter()
 
@@ -87,6 +88,10 @@ async def send_command(request: Request, command: dict):
         cmd = command.get("command")
         app_state.spotter_app.command_queue.put(cmd)
     return {"status": "ok"}
+
+@router.get("/api/translations")
+async def get_translations():
+    return TRANSLATIONS
 
 @router.websocket("/ws/stream")
 async def websocket_stream(websocket: WebSocket):

@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Virtual AI Spotter - Workout</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="workout-layout">
+        <!-- Blurred Background -->
+        <img id="bg-video-blur" class="bg-blur" alt="">
+
         <!-- Main Video Area -->
         <div class="video-container">
             <img id="video-stream" alt="Video Stream">
@@ -22,32 +26,38 @@
             </div>
         </div>
 
-        <!-- Sidebar Dashboard -->
-        <div class="dashboard glass-panel">
+        <!-- Floating Dashboard -->
+        <div class="dashboard glass-panel floating-dashboard">
             <h2 id="exercise-name">Loading...</h2>
             
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <span class="stat-label">Set</span>
-                    <span class="stat-value" id="set-counter">0 / 0</span>
+            <div class="progress-section">
+                <div class="progress-ring-container">
+                    <svg class="progress-ring" width="100" height="100">
+                        <circle class="progress-ring-circle-bg" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="transparent" r="42" cx="50" cy="50"/>
+                        <circle id="rep-ring" class="progress-ring-circle" stroke="var(--accent-green)" stroke-width="8" fill="transparent" r="42" cx="50" cy="50"/>
+                    </svg>
+                    <div class="progress-text">
+                        <span id="rep-counter" class="rep-value">0/0</span>
+                        <span id="rep-label" class="rep-label-small">reps</span>
+                    </div>
                 </div>
-                <div class="stat-box">
-                    <span class="stat-label" id="rep-label">Reps</span>
-                    <span class="stat-value" id="rep-counter">0 / 0</span>
+                
+                <div class="set-dots" id="set-dots-container">
+                    <!-- Dots injected by JS -->
                 </div>
             </div>
             
-            <div class="feedback-box">
-                <span class="stat-label">Feedback</span>
-                <p id="feedback-text" class="feedback-text">Awaiting form...</p>
+            <div class="feedback-box" id="feedback-box">
+                <span class="feedback-icon" id="feedback-icon">✓</span>
+                <span id="feedback-text" class="feedback-text">Awaiting form...</span>
             </div>
             
-            <div class="state-indicator" id="state-indicator">
+            <div class="state-pill" id="state-indicator">
                 START
             </div>
             
             <div class="controls">
-                <button id="quit-btn" class="btn-danger">Quit Workout</button>
+                <button id="quit-btn" class="btn-text-danger">✕ Termina</button>
             </div>
         </div>
     </div>

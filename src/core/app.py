@@ -178,6 +178,12 @@ class SpotterApp:
                 ui_state = self.session_manager.update(pose_data, time.time())
                 
                 # 4. Render & Output (Delegate to Sink)
+                ui_state.feedback_key = i18n.get(ui_state.feedback_key) if ui_state.feedback_key else ""
+                if ui_state.state_display:
+                    ui_state.state_display = ui_state.state_display._replace(
+                        label_key=i18n.get(ui_state.state_display.label_key)
+                    )
+                    
                 state_json = json.dumps(ui_state.to_dict())
                 self.output_sink.emit(frame, state_json)
                 
