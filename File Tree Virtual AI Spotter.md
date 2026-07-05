@@ -1,83 +1,112 @@
+# File Tree: Virtual-AI-Spotter
 ```
 ├── 📁 .github
-│   └── 📁 workflows                          # CI/CD pipeline definitions
+│   └── 📁 workflows
 ├── 📁 assets
 │   └── 📁 models
-│       └── 📄 yolov8n-pose.pt                 # Pre-trained YOLOv8 pose model
+│       └── 📄 yolov8n-pose.pt
+├── 📁 aws
+│   ├── 📁 lambda
+│   │   ├── 🐍 lambda_function.py
+│   │   └── 📄 requirements.txt
+│   ├── 📝 README.md
+│   └── ⚙️ iam-policy.json
 ├── 📁 config
-│   ├── 🐍 settings.py                         # Global constants, thresholds, colors
-│   └── 🐍 translation_strings.py              # i18n strings (IT/EN)
+│   ├── 🐍 settings.py
+│   └── 🐍 translation_strings.py
 ├── 📁 scripts
-│   ├── 🐍 check_cam.py                        # Camera connectivity check
-│   └── 🐍 verify_refactor.py                  # Post-refactor sanity checks
+│   ├── 🐍 check_cam.py
+│   └── 🐍 verify_refactor.py
 ├── 📁 src
-│   ├── 📁 core                                # Business logic (framework-agnostic)
-│   │   ├── 📁 entities                        # Domain objects (DDD)
-│   │   │   ├── 🐍 session.py                  # Workout session dataclass
-│   │   │   ├── 🐍 ui_state.py                 # Rendering state container
-│   │   │   ├── 🐍 user.py                     # User profile dataclass
-│   │   │   └── 🐍 workout_state.py            # Workout FSM states (ACTIVE/REST/FINISHED)
-│   │   ├── 🐍 app.py                          # Composition root & main loop
-│   │   ├── 🐍 config_types.py                 # TypedDict definitions for configs
-│   │   ├── 🐍 exceptions.py                   # Custom exception hierarchy (SpotterError)
-│   │   ├── 🐍 factory.py                      # Exercise factory (creates instances)
-│   │   ├── 🐍 feedback.py                     # Rule-based form correction engine
-│   │   ├── 🐍 fsm.py                          # RepetitionCounter & StaticDurationCounter
-│   │   ├── 🐍 gesture_detector.py             # Pose-based gesture recognition
-│   │   ├── 🐍 interfaces.py                   # ABCs: Exercise, VideoSource, StateDisplayInfo
-│   │   ├── 🐍 protocols.py                    # DI protocols: PoseDetector, DBManager
-│   │   ├── 🐍 registry.py                     # @register_exercise decorator & registry
-│   │   └── 🐍 session_manager.py              # Set/rest/rep orchestration
-│   ├── 📁 data                                # Persistence layer
-│   │   ├── 🐍 db_manager.py                   # SQLite CRUD operations
-│   │   └── 📄 schema.sql                      # Database schema definition
-│   ├── 📁 exercises                           # Concrete exercise implementations
-│   │   ├── 🐍 __init__.py                     # Auto-imports for registration
-│   │   ├── 🐍 curl.py                         # Bicep Curl (inverted FSM)
-│   │   ├── 🐍 plank.py                        # Plank (static hold timer)
-│   │   ├── 🐍 pushup.py                       # Push-Up (bilateral + form check)
-│   │   └── 🐍 squat.py                        # Squat (standard FSM)
-│   ├── 📁 infrastructure                      # External system adapters
-│   │   ├── 🐍 ai_inference.py                 # YOLO model wrapper (PoseDetector)
-│   │   ├── 🐍 keypoint_extractor.py           # Raw YOLO output → 17×3 arrays
-│   │   └── 🐍 webcam.py                       # OpenCV camera capture (VideoSource)
-│   ├── 📁 ui                                  # Presentation layer
-│   │   ├── 🐍 cli.py                          # Interactive workout setup prompts
-│   │   ├── 🐍 dashboard_renderer.py           # HUD panel (reps, sets, state)
-│   │   ├── 🐍 overlay_renderer.py             # Full-screen REST/FINISHED overlays
-│   │   ├── 🐍 skeleton_renderer.py            # Pose skeleton & angle arcs
-│   │   └── 🐍 visualizer.py                   # Renderer facade (delegates to above)
-│   └── 📁 utils                               # Signal processing utilities
-│       ├── 🐍 geometry.py                     # Pure-math angle calculations
-│       ├── 🐍 performance.py                  # FPS counter & timing helpers
-│       └── 🐍 smoothing.py                    # One Euro Filter for jitter reduction
-├── 📁 tests                                   # Automated test suite (136 tests)
-│   ├── 📁 mocks                               # Test doubles
+│   ├── 📁 api
+│   │   ├── 🐍 routes.py
+│   │   └── 🐍 server.py
+│   ├── 📁 core
+│   │   ├── 📁 entities
+│   │   │   ├── 🐍 session.py
+│   │   │   ├── 🐍 ui_state.py
+│   │   │   ├── 🐍 user.py
+│   │   │   └── 🐍 workout_state.py
+│   │   ├── 🐍 app.py
+│   │   ├── 🐍 config_types.py
+│   │   ├── 🐍 exceptions.py
+│   │   ├── 🐍 factory.py
+│   │   ├── 🐍 feedback.py
+│   │   ├── 🐍 fsm.py
+│   │   ├── 🐍 gesture_detector.py
+│   │   ├── 🐍 gesture_handler.py
+│   │   ├── 🐍 interfaces.py
+│   │   ├── 🐍 mixins.py
+│   │   ├── 🐍 protocols.py
+│   │   ├── 🐍 registry.py
+│   │   └── 🐍 session_manager.py
+│   ├── 📁 data
+│   │   ├── 🐍 api_client.py
+│   │   ├── 🐍 db_manager.py
+│   │   └── 📄 schema.sql
+│   ├── 📁 exercises
 │   │   ├── 🐍 __init__.py
-│   │   ├── 🐍 mock_pose.py                    # Fake PoseDetector for DI tests
-│   │   └── 🐍 mock_video.py                   # Fake VideoSource for DI tests
+│   │   ├── 🐍 curl.py
+│   │   ├── 🐍 plank.py
+│   │   ├── 🐍 pushup.py
+│   │   └── 🐍 squat.py
+│   ├── 📁 infrastructure
+│   │   ├── 🐍 ai_inference.py
+│   │   ├── 🐍 keypoint_extractor.py
+│   │   ├── 🐍 sinks.py
+│   │   └── 🐍 webcam.py
+│   ├── 📁 ui
+│   └── 📁 utils
+│       ├── 🐍 geometry.py
+│       ├── 🐍 performance.py
+│       └── 🐍 smoothing.py
+├── 📁 tests
+│   ├── 📁 api
+│   │   └── 🐍 test_routes.py
+│   ├── 📁 infrastructure
+│   │   └── 🐍 test_sinks.py
+│   ├── 📁 mocks
+│   │   ├── 🐍 __init__.py
+│   │   ├── 🐍 mock_pose.py
+│   │   └── 🐍 mock_video.py
 │   ├── 🐍 __init__.py
-│   ├── 🐍 helpers.py                          # Shared fixtures (UIState, dummy frames)
-│   ├── 🐍 test_app_di.py                      # Dependency injection wiring tests
-│   ├── 🐍 test_db_manual.py                   # SQLite persistence tests
-│   ├── 🐍 test_entities_manual.py             # Domain entity tests
-│   ├── 🐍 test_exercise_integration.py        # End-to-end rep counting & form feedback
-│   ├── 🐍 test_exercises.py                   # Exercise process_frame unit tests
-│   ├── 🐍 test_fsm.py                         # FSM state transitions & debouncing
-│   ├── 🐍 test_geometry.py                    # Angle calculation edge cases
-│   ├── 🐍 test_gesture.py                     # Gesture recognition tests
-│   ├── 🐍 test_plank.py                       # Plank lifecycle & timer tests
-│   ├── 🐍 test_pose_estimator.py              # PoseEstimator protocol tests
-│   ├── 🐍 test_session_manager.py             # Workout flow & state transitions
-│   ├── 🐍 test_smoothing.py                   # One Euro Filter convergence tests
-│   ├── 🐍 test_visualizer.py                  # Renderer + state display mapping tests
-│   ├── 🐍 verify_debouncing.py                # Manual debouncing validation
-│   ├── 🐍 verify_features.py                  # Manual feature smoke tests
-│   ├── 🐍 verify_i18n.py                      # Manual i18n string verification
-│   └── 🐍 verify_refactor.py                  # Manual refactor validation
+│   ├── 🐍 conftest.py
+│   ├── 🐍 helpers.py
+│   ├── 🐍 test_api_client.py
+│   ├── 🐍 test_app_di.py
+│   ├── 🐍 test_app_integration.py
+│   ├── 🐍 test_db_manual.py
+│   ├── 🐍 test_db_negative.py
+│   ├── 🐍 test_entities_manual.py
+│   ├── 🐍 test_exercise_integration.py
+│   ├── 🐍 test_exercises.py
+│   ├── 🐍 test_fsm.py
+│   ├── 🐍 test_geometry.py
+│   ├── 🐍 test_gesture.py
+│   ├── 🐍 test_lambda.py
+│   ├── 🐍 test_plank.py
+│   ├── 🐍 test_pose_estimator.py
+│   ├── 🐍 test_session_manager.py
+│   ├── 🐍 test_session_rest.py
+│   ├── 🐍 test_smoothing.py
+│   ├── 🐍 test_visualizer.py
+│   ├── 🐍 verify_debouncing.py
+│   ├── 🐍 verify_features.py
+│   ├── 🐍 verify_i18n.py
+│   └── 🐍 verify_refactor.py
+├── 📁 web
+│   ├── 📁 css
+│   │   └── 🎨 style.css
+│   ├── 📁 js
+│   │   └── 📄 app.js
+│   ├── 🖼️ favicon.svg
+│   ├── 🌐 index.html
+│   └── 🌐 workout.html
+├── ⚙️ .env.example
 ├── ⚙️ .gitignore
-├── 📄 LICENSE                                  # AGPL v3
+├── 📝 File Tree Virtual AI Spotter.md
+├── 📄 LICENSE
 ├── 📝 README.md
-├── 🐍 main.py                                 # Application entry point
-└── 📄 requirements.txt                        # Python dependencies
+├── 🐍 main.py
+└── 📄 requirements.txt
 ```
