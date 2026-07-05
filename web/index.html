@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual AI Spotter</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body>
+    <div class="lang-switcher">
+        <button type="button" id="lang-it" class="lang-btn active" onclick="setLang('IT')">IT</button>
+        <button type="button" id="lang-en" class="lang-btn" onclick="setLang('EN')">EN</button>
+    </div>
+
+    <div class="setup-container glass-panel">
+        <h1 data-i18n="ui_workout_setup">Virtual AI Spotter</h1>
+        <p class="subtitle" data-i18n="ui_select_ex">Seleziona il tuo allenamento</p>
+        
+        <form id="setup-form">
+            <div class="form-group">
+                <label data-i18n="ui_select_ex">Esercizio</label>
+                <div class="custom-select-wrapper">
+                    <div class="custom-select-icon-left">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dumbbell"><path d="M14.4 14.4 9.6 9.6"/><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"/><path d="M2.515 5.343a2 2 0 1 1 2.828-2.829l1.768-1.767a2 2 0 1 1 2.829 2.828L3.576 9.94a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829z"/></svg>
+                    </div>
+                    <select id="exercise" class="has-left-icon" required>
+                        <option value="Bicep Curl">Bicep Curl</option>
+                        <option value="Squat">Squat</option>
+                        <option value="PushUp">Push Up</option>
+                        <option value="Plank">Plank</option>
+                    </select>
+                    <div class="custom-select-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label data-i18n="ui_side_val">Lato (Side)</label>
+                <div class="custom-select-wrapper">
+                    <select id="side" required>
+                        <option value="both">Both</option>
+                        <option value="left">Left</option>
+                        <option value="right">Right</option>
+                    </select>
+                    <div class="custom-select-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group row">
+                <div class="col">
+                    <label data-i18n="ui_set">Serie</label>
+                    <div class="stepper-wrapper">
+                        <button type="button" class="stepper-btn" onclick="updateStepper('sets', -1)">−</button>
+                        <span id="sets-display" class="stepper-value" aria-live="polite">3</span>
+                        <input type="hidden" id="sets" value="3">
+                        <button type="button" class="stepper-btn" onclick="updateStepper('sets', 1)">+</button>
+                    </div>
+                </div>
+                <div class="col">
+                    <label id="reps-label" data-i18n="ui_reps">Ripetizioni (o Secondi)</label>
+                    <div class="stepper-wrapper">
+                        <button type="button" class="stepper-btn" onclick="updateStepper('reps', -1)">−</button>
+                        <span id="reps-display" class="stepper-value" aria-live="polite">10</span>
+                        <input type="hidden" id="reps" value="10">
+                        <button type="button" class="stepper-btn" onclick="updateStepper('reps', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <span data-i18n="ui_start_prompt">Inizia allenamento</span>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        let currentLang = 'IT';
+        let translations = {};
+
+        async function loadTranslations() {
+            try {
+                const res = await fetch('/api/translations');
+                translations = await res.json();
+                applyTranslations();
+            } catch (e) {
+                console.error("Failed to load translations", e);
+            }
+        }
+
+        function setLang(lang) {
+            currentLang = lang;
+            document.getElementById('lang-it').classList.toggle('active', lang === 'IT');
+            document.getElementById('lang-en').classList.toggle('active', lang === 'EN');
+            applyTranslations();
+            document.getElementById('exercise').dispatchEvent(new Event('change'));
+        }
+
+        function applyTranslations() {
+            if (!translations[currentLang]) return;
+            const dict = translations[currentLang];
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) {
+                    el.textContent = dict[key];
+                }
+            });
+            
+            const sideSelect = document.getElementById('side');
+            if (sideSelect && sideSelect.options.length >= 3) {
+                if (dict['side_both']) sideSelect.options[0].text = dict['side_both'];
+                if (dict['side_left']) sideSelect.options[1].text = dict['side_left'];
+                if (dict['side_right']) sideSelect.options[2].text = dict['side_right'];
+            }
+        }
+
+        // Initialize translations
+        loadTranslations();
+
+        function updateStepper(id, delta) {
+            const input = document.getElementById(id);
+            const display = document.getElementById(id + '-display');
+            let val = parseInt(input.value) + delta;
+            if (val < 1) val = 1;
+            input.value = val;
+            display.textContent = val;
+        }
+
+        document.getElementById('setup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                exercise_name: document.getElementById('exercise').value,
+                side: document.getElementById('side').value,
+                target_sets: parseInt(document.getElementById('sets').value),
+                target_reps: parseInt(document.getElementById('reps').value),
+                exercise_config: { side: document.getElementById('side').value },
+                language: currentLang
+            };
+            
+            const res = await fetch('/api/setup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (res.ok) {
+                window.location.href = 'workout.html';
+            } else {
+                alert('Failed to start workout.');
+            }
+        });
+
+        document.getElementById('exercise').addEventListener('change', (e) => {
+            const isPlank = e.target.value === 'Plank';
+            const repsLabel = document.getElementById('reps-label');
+            const repsInput = document.getElementById('reps');
+            const repsDisplay = document.getElementById('reps-display');
+            
+            if (isPlank) {
+                if (repsLabel) {
+                    repsLabel.textContent = currentLang === 'IT' ? 'Secondi' : 'Seconds';
+                    repsLabel.removeAttribute('data-i18n');
+                }
+                repsInput.value = 60;
+                repsDisplay.textContent = 60;
+            } else {
+                if (repsLabel) {
+                    repsLabel.setAttribute('data-i18n', 'ui_reps');
+                    if (translations[currentLang] && translations[currentLang]['ui_reps']) {
+                        repsLabel.textContent = translations[currentLang]['ui_reps'];
+                    } else {
+                        repsLabel.textContent = 'Ripetizioni';
+                    }
+                }
+                // Reset defaults for standard exercises if they were previously Plank
+                if (repsInput.value == 60) {
+                    repsInput.value = 10;
+                    repsDisplay.textContent = 10;
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>

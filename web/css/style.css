@@ -1,0 +1,431 @@
+:root {
+    --bg-color: #0F172A;
+    --panel-bg: rgba(30, 41, 59, 0.7);
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --accent-blue: #3B82F6;
+    --accent-green: #10B981;
+    --accent-amber: #F59E0B;
+    --accent-red: #EF4444;
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* Prevent scrolling for app layout */
+}
+
+.glass-panel {
+    background: var(--panel-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Setup Form */
+.setup-container {
+    width: 100%;
+    max-width: 450px;
+    padding: 2.5rem;
+    text-align: center;
+    z-index: 10;
+}
+
+.setup-container h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--text-main), var(--accent-blue));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Custom Select */
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select-wrapper select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.custom-select-wrapper select:focus {
+    border-color: var(--accent-blue);
+}
+
+.custom-select-wrapper select.has-left-icon {
+    padding-left: 2.75rem;
+}
+
+.custom-select-icon-left {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--accent-blue);
+    display: flex;
+    align-items: center;
+}
+
+.custom-select-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-muted);
+}
+
+/* Custom Steppers */
+.stepper-wrapper {
+    display: flex;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.stepper-btn {
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.stepper-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+.stepper-value {
+    flex: 1;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.row {
+    display: flex;
+    gap: 1rem;
+}
+
+.col {
+    flex: 1;
+}
+
+/* Buttons */
+button {
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    outline: none;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--accent-blue), #2563EB);
+    color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+}
+
+/* Text-only danger button */
+.btn-text-danger {
+    background: transparent;
+    border: none;
+    color: var(--accent-red);
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.5rem;
+    display: inline-block;
+    opacity: 0.8;
+}
+
+.btn-text-danger:hover {
+    opacity: 1;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Workout Layout */
+.workout-layout {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Blurred Background */
+.bg-blur {
+    position: absolute;
+    top: -5%;
+    left: -5%;
+    width: 110%;
+    height: 110%;
+    object-fit: cover;
+    filter: blur(20px) brightness(0.4);
+    will-change: filter;
+    z-index: 0;
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    max-width: 1200px; /* Optional: constraint max width */
+    max-height: 100vh;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#video-stream, #skeleton-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Floating Dashboard */
+.floating-dashboard {
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 320px;
+    padding: 2rem;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.dashboard h2 {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    width: 100%;
+}
+
+/* Progress Section (Ring + Dots) */
+.progress-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.progress-ring-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin-bottom: 1rem;
+}
+
+.progress-ring {
+    transform: rotate(-90deg); /* Start at top */
+}
+
+.progress-ring-circle {
+    transition: stroke-dashoffset 0.3s ease;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.rep-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.rep-label-small {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.set-dots {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: transparent;
+    border: 2px solid var(--glass-border);
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.dot.active {
+    background-color: var(--accent-green);
+    border-color: var(--accent-green);
+}
+
+/* Feedback Box */
+.feedback-box {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    background: rgba(15, 23, 42, 0.4);
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    width: 100%;
+    justify-content: center;
+}
+
+.feedback-icon {
+    font-weight: bold;
+}
+
+.feedback-text {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.feedback-green {
+    color: var(--accent-green);
+}
+
+.feedback-red {
+    color: var(--accent-red);
+}
+
+.feedback-amber {
+    color: var(--accent-amber);
+}
+
+/* State Pill (Non-clickable Badge) */
+.state-pill {
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px; /* Pill shape */
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: auto;
+    transition: background-color 0.3s, color 0.3s;
+    background-color: var(--accent-blue);
+    color: white;
+    width: auto;
+}
+
+/* Overlays */
+.overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 3rem;
+    text-align: center;
+    z-index: 10;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Language Switcher */
+.lang-switcher {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 20;
+}
+
+.lang-btn {
+    background: var(--panel-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    backdrop-filter: blur(8px);
+}
+
+.lang-btn.active {
+    background: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
+}

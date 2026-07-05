@@ -50,7 +50,7 @@ CONFIDENCE_THRESHOLD = 0.5     # Ignore detections with confidence < 50%
 DEVICE = _get_env("SPOTTER_DEVICE", _detect_device())  # Auto-detect: cuda/mps/cpu
 
 # --- 3. CAMERA CONFIGURATION ---
-CAMERA_ID = 0           # 0 for integrated webcam, 1 for external
+CAMERA_ID = _get_env("SPOTTER_CAMERA_ID", 0, int)  # 0 for integrated webcam, 1/2/3 for external/DroidCam
 FRAME_WIDTH = 1280      # Desired resolution (HD)
 FRAME_HEIGHT = 720
 FPS = 30

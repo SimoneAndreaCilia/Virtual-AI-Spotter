@@ -27,6 +27,7 @@ TRANSLATIONS = {
         "err_body_not_visible": "Corpo non visibile",
         "state_unknown": "SCONOSCIUTO",
         "state_start": "PRONTO",
+        "state_finished": "COMPLETATO",
         
         # --- SQUAT (Feedback) ---
         "squat_name": "Squat",
@@ -62,23 +63,25 @@ TRANSLATIONS = {
         "plank_state_default": "PLANK",
         
         # --- NEW CLI & OVERLAY STRINGS ---
-        "ui_workout_setup": "IMPOSTAZIONE WORKOUT",
-        "ui_select_ex": "Seleziona Esercizio (1-4)",
+        "ui_workout_setup": "Virtual AI SPOTTER",
+        "ui_select_ex": "Seleziona Esercizio",
         "ui_selected": "Selezionato",
         "ui_side_choice": "Lato (Sinistro 'L' / Destro 'R' / Entrambi 'B') [Default R]",
-        "ui_side_val": "LATO",
-        "side_left": "SINISTRO",
-        "side_right": "DESTRO",
-        "side_both": "ENTRAMBI",
+        "ui_side_val": "Seleziona per quale lato",
+        "side_left": "Sinistro",
+        "side_right": "Destro",
+        "side_both": "Entrambi",
         "ui_settings": "Impostazioni",
         "ui_target_sets": "Quante Serie? [Default 3]",
         "ui_target_reps": "Quante Ripetizioni per Serie? [Default 8]",
         "ui_goal": "Obiettivo",
-        "ui_start_prompt": "Premi INVIO per iniziare...",
+        "ui_start_prompt": "INIZIA",
         "ui_rest_title": "TEMPO DI RECUPERO",
-        "ui_rest_subtitle": "Premi 'C' per la prossima serie",
+        "ui_rest_subtitle": "Prendi fiato",
         "ui_finish_title": "ALLENAMENTO COMPLETATO!",
-        "ui_finish_subtitle": "Premi 'Q' per uscire"
+        "ui_finish_subtitle": "Ottimo lavoro!",
+        "ui_continue_btn": "Continua",
+        "ui_quit_btn": "Torna alla Home"
     },
     
     "EN": {
@@ -107,6 +110,7 @@ TRANSLATIONS = {
         "err_body_not_visible": "Body not visible",
         "state_unknown": "UNKNOWN",
         "state_start": "READY",
+        "state_finished": "FINISHED",
         
         # --- SQUAT (Feedback) ---
         "squat_name": "Squat",
@@ -143,22 +147,24 @@ TRANSLATIONS = {
         
         # --- NEW CLI & OVERLAY STRINGS ---
         "ui_workout_setup": "WORKOUT SETUP",
-        "ui_select_ex": "Select Exercise (1-4)",
+        "ui_select_ex": "Select Exercise",
         "ui_selected": "Selected",
         "ui_side_choice": "Side (Left 'L' / Right 'R' / Both 'B') [Default R]",
-        "ui_side_val": "SIDE",
-        "side_left": "LEFT",
-        "side_right": "RIGHT",
-        "side_both": "BOTH",
+        "ui_side_val": "Select which side",
+        "side_left": "Left",
+        "side_right": "Right",
+        "side_both": "Both",
         "ui_settings": "Settings",
         "ui_target_sets": "Target Sets [Default 3]",
         "ui_target_reps": "Target Reps per Set [Default 8]",
         "ui_goal": "Goal",
-        "ui_start_prompt": "Press ENTER to start workout...",
+        "ui_start_prompt": "START",
         "ui_rest_title": "REST TIME",
-        "ui_rest_subtitle": "Press 'C' to start next set",
+        "ui_rest_subtitle": "Take a breather",
         "ui_finish_title": "WORKOUT COMPLETE!",
-        "ui_finish_subtitle": "Press 'Q' to exit"
+        "ui_finish_subtitle": "Great job!",
+        "ui_continue_btn": "Continue",
+        "ui_quit_btn": "Back to Home"
     }
 }
 
